@@ -1,16 +1,11 @@
 package com.rocasolida;
 
-import java.util.Collections;
-import java.util.List;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.LogManager;
-import org.apache.log4j.Logger;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import com.rocasolida.entities.Credential;
 import com.rocasolida.scrap.FacebookScrap;
 
 
@@ -25,10 +20,17 @@ public class Application {
 		DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
 		capabilities.setCapability("phantomjs.binary.path","C:\\Users\\gvaldez\\drivers\\phantomjs.exe");
 		capabilities.setCapability("phantomjs.page.settings.userAgent","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36");
+		
 		//Creo el webdriver
 		WebDriver driver = new PhantomJSDriver(capabilities);
-		//Accedo a la página que quiero scrapear		
-		FacebookScrap fs = new FacebookScrap(driver);
+		//Accedo a la página que quiero scrapear
+		
+		/*
+		 * Estas credenciales deberían venir de BD u otro lugar
+		 */
+		Credential access = new Credential("","",0L,"");
+		
+		FacebookScrap fs = new FacebookScrap(driver, access);
 		fs.obtainPublicationsAndComments();
 		driver.quit();
 	}

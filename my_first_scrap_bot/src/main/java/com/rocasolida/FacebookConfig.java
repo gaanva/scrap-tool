@@ -5,6 +5,13 @@ import lombok.Data;
 public @Data final class FacebookConfig {
 	public static String URL = "https://www.facebook.com/";
 	public static String URL_PROFILE =  "https://www.facebook.com/mauriciomacri";
+    
+    /**FORM_LOGIN ()**/
+	public static String XPATH_FORM_LOGIN = "//form[contains(@id,'login_form')]";
+    public static String XPATH_INPUT_MAIL_LOGIN = "//input[contains(@id,'email')]"; 
+    public static String XPATH_INPUT_PASS_LOGIN = "//input[contains(@id,'pass')]";
+    public static String XPATH_BUTTON_LOGIN = "//label[contains(@id,'loginbutton')]";
+    
     public static String XPATH_PUBLICATIONS_CONTAINER = "//div[contains(@class,'userContentWrapper')]";
     
     /*

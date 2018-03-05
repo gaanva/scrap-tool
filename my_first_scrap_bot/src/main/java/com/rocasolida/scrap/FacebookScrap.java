@@ -9,22 +9,34 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import com.rocasolida.FacebookConfig;
+import com.rocasolida.entities.Credential;
 
 import lombok.Data;
 
 public @Data class FacebookScrap {
 	
 	private WebDriver driver;
-	
+	private Credential access;
 	
 	public FacebookScrap(WebDriver driver) {
 		super();
 		this.driver = driver;
 	}
+	
+	public FacebookScrap(WebDriver driver, Credential access) {
+		super();
+		this.driver = driver;
+		this.access = access;
+	}
 
 	public void obtainPublicationsAndComments() {
 		driver.navigate().to(FacebookConfig.URL_PROFILE);
-        //Espero 5 segundos que cargue la página. (Por lo general tarda el contenido, pero el maquetado HTML en teoría debería estar...)
+        if(this.access!=null) {
+        	//try login
+        	this.login();
+        }
+		
+		//Espero 5 segundos que cargue la página. (Por lo general tarda el contenido, pero el maquetado HTML en teoría debería estar...)
 		driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);	
 		//System.out.println(driver.getPageSource());
 		
@@ -100,7 +112,23 @@ public @Data class FacebookScrap {
 	}
 	
 	
+	private boolean login() {
+		WebElement formLogin = this.driver.findElement(By.xpath(FacebookConfig.XPATH_FORM_LOGIN));
+		formLogin.findElement(By.xpath(FacebookConfig.XPATH_INPUT_MAIL_LOGIN)).sendKeys(this.access.getUser());
+		formLogin.findElement(By.xpath(FacebookConfig.XPATH_INPUT_PASS_LOGIN)).sendKeys(this.access.getPass());
+		formLogin.findElement(By.xpath(FacebookConfig.XPATH_BUTTON_LOGIN)).click();
+		driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+	    return (loggedIn())?true:false;
+		
+	}
 	
-	
-	
+	private boolean loggedIn() {
+		try {
+			this.driver.findElement(By.xpath(FacebookConfig.XPATH_FORM_LOGIN));
+			return false;
+    	} catch (NoSuchElementException e) {
+    	    System.out.println("Login Successfull! "+"usr: "+this.access.getUser());
+    	    return true;
+    	}
+	}
 }
