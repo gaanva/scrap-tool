@@ -1,13 +1,13 @@
 package com.rocasolida;
 
+import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
-import org.openqa.selenium.By;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.WebElement;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
-import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -21,7 +21,6 @@ import com.rocasolida.scrap.FacebookScrap;
 @SpringBootApplication
 public class Application {
 	public static void main(String[] args) {
-		
 		//Configuración del webdriver
 		DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
 		capabilities.setCapability("phantomjs.binary.path","C:\\Users\\gvaldez\\drivers\\phantomjs.exe");
