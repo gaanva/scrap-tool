@@ -25,11 +25,7 @@ public class Application {
 		WebDriver driver = new PhantomJSDriver(capabilities);
 		//Accedo a la página que quiero scrapear
 		
-		/*
-		 * Estas credenciales deberían venir de BD u otro lugar
-		 */
-		Credential access = new Credential("","",0L,"");
-		
+		Credential access = new Credential("estelaquilmes2018@gmail.com","qsocialnow2018",0L,"");
 		FacebookScrap fs = new FacebookScrap(driver, access);
 		fs.obtainPublicationsAndComments();
 		driver.quit();

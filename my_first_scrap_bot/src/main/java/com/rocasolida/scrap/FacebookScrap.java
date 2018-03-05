@@ -28,28 +28,26 @@ public @Data class FacebookScrap {
 		this.driver = driver;
 		this.access = access;
 	}
-
+	
 	public void obtainPublicationsAndComments() {
-		driver.navigate().to(FacebookConfig.URL_PROFILE);
-        if(this.access!=null) {
-        	//try login
+		if(this.access!=null) {
+			driver.navigate().to(FacebookConfig.URL);
+			driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);
+			//try login
         	this.login();
         }
 		
-		//Espero 5 segundos que cargue la página. (Por lo general tarda el contenido, pero el maquetado HTML en teoría debería estar...)
+		//Si accesdes con un usuario de estos que te da brunolidewilde, puede ser que te redireccione a una página de configuracion de la página.
+		//Por esto el acceso al perfil a scrapear lo hago luego de que se loguea.
+		driver.navigate().to(FacebookConfig.URL_PROFILE);
 		driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);	
-		//System.out.println(driver.getPageSource());
-		
-		//Content General
-		//WebElement contentContainer = driver.findElement(By.xpath("//div[@id='content_container']"));
 		
 		//Busco todas las publicaciones que se cargaron. (Si entras sin usuario logueado, te carga 16 publicaciones de una vez).
-		//List<WebElement> publications = contentContainer.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
 		List<WebElement> publications = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
-        
-        
+		
+		System.out.println("SE ENCONTRARON UN TOTAL DE " + publications.size() + "PUBLICACIONES");
         for (int i = 0; i < publications.size(); i++) {
-        	System.out.println("SE ENCONTRARON UN TOTAL DE " + publications.size() + "PUBLICACIONES");
+        	
         	System.out.println(" =============== "+ i +" DATOS PUBLICACIÓN ================= ");
         	System.out.println(publications.get(i).getText());
         	//La publicacion tiene para ver más comentarios?
@@ -125,9 +123,10 @@ public @Data class FacebookScrap {
 	private boolean loggedIn() {
 		try {
 			this.driver.findElement(By.xpath(FacebookConfig.XPATH_FORM_LOGIN));
+			System.out.println("[ERROR]Login error! check credentials provided");
 			return false;
     	} catch (NoSuchElementException e) {
-    	    System.out.println("Login Successfull! "+"usr: "+this.access.getUser());
+    	    System.out.println("[SUCCESS]Login Successfull! "+"usr: "+this.access.getUser());
     	    return true;
     	}
 	}
