@@ -1,5 +1,17 @@
 package com.rocasolida.entities;
 
-public class Publication {
+import java.util.Date;
+import java.util.List;
 
+import lombok.Data;
+
+public @Data class Publication {
+	private String owner;
+	private Long timeStamp;
+	private Date dateTime;
+	private String titulo;
+	private Integer cantShare;
+	private Integer cantReproducciones;
+	private List<Comment> mensajes;
+	
 }
