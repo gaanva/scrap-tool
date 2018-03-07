@@ -13,5 +13,5 @@ public @Data class Publication {
 	private Integer cantShare;
 	private Integer cantReproducciones;
 	private List<Comment> comments;
-	
+
 }

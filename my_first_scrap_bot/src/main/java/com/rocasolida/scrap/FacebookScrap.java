@@ -12,13 +12,13 @@ import org.openqa.selenium.Dimension;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.springframework.boot.actuate.autoconfigure.ShellProperties.SpringAuthenticationProperties;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Credential;
 import com.rocasolida.entities.Publication;
 
 import lombok.Data;
+
 
 public @Data class FacebookScrap {
 	
@@ -73,7 +73,6 @@ public @Data class FacebookScrap {
         	 * El timestamp viene en GMT.
         	 */
         	aux.setTimeStamp(Long.parseLong(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
-        	System.out.println("TIMESTAMP" + publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime"));
         	
         	/**
         	 * TITULO
@@ -83,10 +82,8 @@ public @Data class FacebookScrap {
         		//puede ser que una publicación no tenga título y puede ser que tenga un link de "ver más", al cual hacerle click.
         		this.clickViewMoreTextContent(publicationsElements.get(i), FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS);
         		aux.setTitulo(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
-        		System.out.println("TITULO: "+publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
         	}else {
         		aux.setTitulo(null);
-        		System.out.println("SIN TITULO");
         	}
         	
         	/**
@@ -94,8 +91,6 @@ public @Data class FacebookScrap {
         	 * La pubicación siempre tiene un OWNER.
         	 */
         	aux.setOwner(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
-        	System.out.println("OWNER: " + publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());
-        	
         	/**
         	 * DATETIME
         	 * Tener en cuenta que es GMT+4, porque es el del usuario. (controlar cuando la cuenta a scrapear sea de otro país, qué muestra?
@@ -108,7 +103,6 @@ public @Data class FacebookScrap {
 	        {        	
 	            Date date = simpleDateFormat.parse(d);
 	            aux.setDateTime(date);
-	            System.out.println("DATETIME : "+simpleDateFormat.format(date));
 	        }
 	        catch (ParseException ex)
 	        {
@@ -120,31 +114,23 @@ public @Data class FacebookScrap {
 	         */
         	if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
         		aux.setCantReproducciones(Integer.parseInt(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
-        		System.out.println("CANT REPROS: " + publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+",""));
         	}else {
         		aux.setCantReproducciones(null);
-        		System.out.println("SIN CANT REPROS");
         	}
-        	
         	/**
 	         * CANTIDAD DE SHARES
 	         */
         	if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
         		aux.setCantShare(Integer.parseInt(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
-        		System.out.println("Cant SHARE: " + publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+",""));
         	}else {
         		aux.setCantShare(0);
-        		System.out.println("SIN SHARE!");
         	}
         	
-        	aux.toString();
+        	//Lo almaceno en un array.
         	publicationsImpl.add(aux);
 		}
 		
-		/*for (int j = 0; j < publicationsImpl.size(); j++) {
-			System.out.println("pos " + j);
-			((Publication)publicationsImpl.get(j)).toString();
-		}*/
+		this.printPublications(publicationsImpl);
         	
         	
         /*	
@@ -251,6 +237,13 @@ public @Data class FacebookScrap {
 			}
 		}
 				
+	}
+	
+	private void printPublications(List<Publication> lista) {
+		for (int j = 0; j < lista.size(); j++) {
+			System.out.println("============== POS " + j + "===============");
+			System.out.println(lista.get(j).toString());
+		}
 	}
 	
 }

@@ -1,8 +1,7 @@
 package com.rocasolida;
 
-import lombok.Data;
 
-public @Data final class FacebookConfig {
+public final class FacebookConfig {
 	public static String URL = "https://www.facebook.com/";
 	public static String URL_PROFILE =  "https://www.facebook.com/mauriciomacri";
     
