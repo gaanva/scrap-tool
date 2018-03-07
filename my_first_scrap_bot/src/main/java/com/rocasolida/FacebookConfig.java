@@ -13,13 +13,14 @@ public @Data final class FacebookConfig {
     public static String XPATH_BUTTON_LOGIN = "//label[contains(@id,'loginbutton')]";
     /**DATOS DE LA PUBLICACIÓN**/
     public static String XPATH_PUBLICATIONS_CONTAINER = "//div[contains(@class,'userContentWrapper')]";
-    public static String XPATH_PUBLICATION_OWNER = "//span[contains(@class,'fwb fcg')]"; //getText()
-    public static String XPATH_PUBLICATION_TIMESTAMP = "//abbr[contains(@class,'livetimestamp')]"; //getAttribute("data-utime")
-    public static String XPATH_PUBLICATION_DATE_TIME = "//abbr[contains(@class,'livetimestamp')]"; //getAttribute("title")
-    public static String XPATH_PUBLICATION_TITLE = "//div[contains(@class,'_5pbx userContent')]";
-    public static String XPATH_PUBLICATION_CANT_REPRO = "//div[contains(@class,'_1t6k')]";
-    public static String XPATH_PUBLICATION_CANT_SHARE = "//a[contains(@class,'UFIShareLink')]";
-    public static String XPATH_PUBLICATION_VER_MAS_MSJS = "//a[contains(@class,'UFIPagerLink')]";
+    public static String XPATH_PUBLICATION_OWNER = ".//span[contains(@class,'fwn fcg')]//span[contains(@class,'fwb')]"; //getAttribute("aria-label")
+    public static String XPATH_PUBLICATION_TIMESTAMP = ".//abbr[contains(@class,'livetimestamp')]"; //getAttribute("data-utime")
+    public static String XPATH_PUBLICATION_DATE_TIME = ".//abbr[contains(@class,'livetimestamp')]"; //getAttribute("title")
+    public static String XPATH_PUBLICATION_TITLE = ".//div[contains(@class,'_5pbx userContent')]";
+    public static String XPATH_PUBLICATION_TITLE_VER_MAS = ".//div[contains(@class,'_5pbx userContent')]//a[contains(@class,'see_more_link')]";
+    public static String XPATH_PUBLICATION_CANT_REPRO = ".//div[contains(@class,'_1t6k')]";
+    public static String XPATH_PUBLICATION_CANT_SHARE = ".//a[contains(@class,'UFIShareLink')]";
+    public static String XPATH_PUBLICATION_VER_MAS_MSJS = ".//a[contains(@class,'UFIPagerLink')]";
     /**DATOS DE LOS MENSAJES**/
     
     /*

@@ -1,15 +1,19 @@
 package com.rocasolida.scrap;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Credential;
+import com.rocasolida.entities.Publication;
 
 import lombok.Data;
 
@@ -40,15 +44,77 @@ public @Data class FacebookScrap {
 		//Si accesdes con un usuario de estos que te da brunolidewilde, puede ser que te redireccione a una página de configuracion de la página.
 		//Por esto el acceso al perfil a scrapear lo hago luego de que se loguea.
 		driver.navigate().to(FacebookConfig.URL_PROFILE);
-		driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);	
+		driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);	
 		
 		//Busco todas las publicaciones que se cargaron. (Si entras sin usuario logueado, te carga 16 publicaciones de una vez).
 		List<WebElement> publications = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
-		
 		System.out.println("SE ENCONTRARON UN TOTAL DE " + publications.size() + "PUBLICACIONES");
+        
+		List<Publication> publicationsImpl= new ArrayList<Publication>();
+        
         for (int i = 0; i < publications.size(); i++) {
-        	
+        //for ( WebElement we: publications) { 	
         	System.out.println(" =============== "+ i +" DATOS PUBLICACIÓN ================= ");
+        	Publication aux = new Publication();
+        	
+        	aux.setTimeStamp(Long.parseLong(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
+        	System.out.println("TIMESTAMP" + publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime"));
+        	//puede ser que una publicación no tenga título.
+        	//HAY QUE VER QUE PASA CUANDO EL TEXTO DEL TITULO ES MUY LARGO... SI RECARGA LA PAGINA O LA MANTIENE EN LA MISMA.
+        	if(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_TITLE)) {
+        		System.out.println("TITULO: "+publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
+        		/*
+        		while(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS)) {
+        			Point hoverItem = publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS)).getLocation();
+        			 ((JavascriptExecutor)driver).executeScript("window.scrollBy(0,"+(hoverItem.getY())+");");
+        			 driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);
+        			publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS)).click();
+        		}
+        		*/
+        		//aux.setTitulo(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
+        		System.out.println("TITULO: "+publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
+        		
+        	}else {
+        		System.out.println("SIN TITULO");
+        	}
+        	
+        	if(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_OWNER)) {
+        		aux.setOwner(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
+        		System.out.println("OWNER: " + publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());
+        	}else {
+        		System.out.println("SIN OWNER!");
+        	}
+            
+        	
+        	
+        	
+        	//DateFormat format = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
+        	//aux.setDateTime(new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH).parse(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("title")));
+        	
+        	if(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
+        		aux.setCantReproducciones(Integer.parseInt(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
+        		System.out.println("CANT REPROS: " + publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+",""));
+        	}else {
+        		System.out.println("SIN CANT REPROS");
+        	}
+        	
+        	if(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
+        		aux.setCantShare(Integer.parseInt(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
+        		System.out.println("Cant SHARE: " + publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+",""));
+        	}else {
+        		System.out.println("SIN SHARE!");
+        	}
+        	
+        	publicationsImpl.add(aux);
+		}
+		
+		/*for (int j = 0; j < publicationsImpl.size(); j++) {
+			System.out.println("pos " + j);
+			((Publication)publicationsImpl.get(j)).toString();
+		}*/
+        	
+        	
+        /*	
         	System.out.println(publications.get(i).getText());
         	//La publicacion tiene para ver más comentarios?
             //this.loadAllPublicationComments(publications.get(i));
@@ -66,7 +132,7 @@ public @Data class FacebookScrap {
             List<WebElement> comments = publications.get(i).findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
             this.obtainPublicationComments(comments);
         	System.out.println(" ==============="+i+" FIN================= ");
-        	
+        */	
         	//this.obtainPublicationComments(publications.get(i));
         	/*
         	 * ESTE ES EL FORMATO DE EXTRACCIÓN:
@@ -77,9 +143,9 @@ public @Data class FacebookScrap {
 	        	Swahili fundas
 	        	320.202 reproducciones
         	*/
-        	
+       /* 	
         }
-        
+       */
 	}
 	
 	/*
@@ -130,4 +196,25 @@ public @Data class FacebookScrap {
     	    return true;
     	}
 	}
+	
+	private boolean existElement(WebElement element, String xpathExpression) {
+		if((element.findElements(By.xpath(xpathExpression))).size() > 0) {
+			return true;
+		}else {
+			return false;
+		}
+		/*
+		 * Esta es una forma más lenta de hacer el chequeo. Espera
+		 * hasta que encuentra la exception.
+		try {
+			element.findElement(By.xpath(xpathExpression));
+    		return true;
+			
+    	} catch (NoSuchElementException e) {
+    	    System.out.println("[ERROR] El elemento no se encuentra ");
+    		return false;
+    	}
+    	*/
+	}
+	
 }

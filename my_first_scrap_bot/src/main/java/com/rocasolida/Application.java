@@ -15,6 +15,7 @@ import com.rocasolida.scrap.FacebookScrap;
  */
 @SpringBootApplication
 public class Application {
+	
 	public static void main(String[] args) {
 		//Configuración del webdriver
 		DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
@@ -25,7 +26,7 @@ public class Application {
 		WebDriver driver = new PhantomJSDriver(capabilities);
 		//Accedo a la página que quiero scrapear
 		
-		Credential access = new Credential("estelaquilmes2018@gmail.com","qsocialnow2018",0L,"");
+		Credential access = null;//new Credential("estelaquilmes2018@gmail.com","qsocialnow2018",0L,"");
 		FacebookScrap fs = new FacebookScrap(driver, access);
 		fs.obtainPublicationsAndComments();
 		driver.quit();
