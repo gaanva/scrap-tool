@@ -1,15 +1,18 @@
 package com.rocasolida.scrap;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
-import org.openqa.selenium.JavascriptExecutor;
+import org.openqa.selenium.Dimension;
 import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.springframework.boot.actuate.autoconfigure.ShellProperties.SpringAuthenticationProperties;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Credential;
@@ -41,70 +44,100 @@ public @Data class FacebookScrap {
         	this.login();
         }
 		
-		//Si accesdes con un usuario de estos que te da brunolidewilde, puede ser que te redireccione a una página de configuracion de la página.
-		//Por esto el acceso al perfil a scrapear lo hago luego de que se loguea.
+		/*
+		 * [SCREEN SIZE]Debería ser una property de la aplicación. Si no le pones esto, 
+		 * cuando queres clickear un elemento, te dice que el elemento no está visible y por ende no lo podés manipular.
+		 * Selenium se basa en todo lo que sea Visual en pantalla.
+		 */
+		driver.manage().window().setSize(new Dimension(1920, 1080)); 
+		
+		/*
+		 *Si accesdes con un usuario de estos que te da brunolidewilde, puede ser que te redireccione a una página de configuracion de la página.
+		 *Por esto el acceso al perfil a scrapear lo hago luego de que se loguea. 
+		 */
 		driver.navigate().to(FacebookConfig.URL_PROFILE);
 		driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);	
 		
 		//Busco todas las publicaciones que se cargaron. (Si entras sin usuario logueado, te carga 16 publicaciones de una vez).
-		List<WebElement> publications = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
-		System.out.println("SE ENCONTRARON UN TOTAL DE " + publications.size() + "PUBLICACIONES");
+		List<WebElement> publicationsElements = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+		System.out.println("SE ENCONTRARON UN TOTAL DE " + publicationsElements.size() + "PUBLICACIONES");
         
 		List<Publication> publicationsImpl= new ArrayList<Publication>();
         
-        for (int i = 0; i < publications.size(); i++) {
-        //for ( WebElement we: publications) { 	
+        for (int i = 0; i < publicationsElements.size(); i++) {
         	System.out.println(" =============== "+ i +" DATOS PUBLICACIÓN ================= ");
         	Publication aux = new Publication();
         	
-        	aux.setTimeStamp(Long.parseLong(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
-        	System.out.println("TIMESTAMP" + publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime"));
-        	//puede ser que una publicación no tenga título.
-        	//HAY QUE VER QUE PASA CUANDO EL TEXTO DEL TITULO ES MUY LARGO... SI RECARGA LA PAGINA O LA MANTIENE EN LA MISMA.
-        	if(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_TITLE)) {
-        		System.out.println("TITULO: "+publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
-        		/*
-        		while(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS)) {
-        			Point hoverItem = publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS)).getLocation();
-        			 ((JavascriptExecutor)driver).executeScript("window.scrollBy(0,"+(hoverItem.getY())+");");
-        			 driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);
-        			publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS)).click();
-        		}
-        		*/
-        		//aux.setTitulo(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
-        		System.out.println("TITULO: "+publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
-        		
+        	/**
+        	 * TIMESTAMP
+        	 * El timestamp viene en GMT.
+        	 */
+        	aux.setTimeStamp(Long.parseLong(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
+        	System.out.println("TIMESTAMP" + publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime"));
+        	
+        	/**
+        	 * TITULO
+        	 * TODO HAY QUE VER QUE PASA CUANDO EL TEXTO DEL TITULO ES MUY LARGO... SI RECARGA LA PAGINA O LA MANTIENE EN LA MISMA.
+        	 */
+        	if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_PUBLICATION_TITLE)) {
+        		//puede ser que una publicación no tenga título y puede ser que tenga un link de "ver más", al cual hacerle click.
+        		this.clickViewMoreTextContent(publicationsElements.get(i), FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS);
+        		aux.setTitulo(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
+        		System.out.println("TITULO: "+publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
         	}else {
+        		aux.setTitulo(null);
         		System.out.println("SIN TITULO");
         	}
         	
-        	if(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_OWNER)) {
-        		aux.setOwner(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
-        		System.out.println("OWNER: " + publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());
+        	/**
+        	 * OWNER
+        	 * La pubicación siempre tiene un OWNER.
+        	 */
+        	aux.setOwner(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
+        	System.out.println("OWNER: " + publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());
+        	
+        	/**
+        	 * DATETIME
+        	 * Tener en cuenta que es GMT+4, porque es el del usuario. (controlar cuando la cuenta a scrapear sea de otro país, qué muestra?
+        	 * la del usuario que consulta o la del owner de la cuenta?.)
+        	 * TODO Si son posts, anteriores al día de la fecha, el formato del String cambia a: martes, 6 de marzo de 2018 a las 6:59
+        	 */
+        	String d = (publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP))).getAttribute("title");
+    		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+	        try
+	        {        	
+	            Date date = simpleDateFormat.parse(d);
+	            aux.setDateTime(date);
+	            System.out.println("DATETIME : "+simpleDateFormat.format(date));
+	        }
+	        catch (ParseException ex)
+	        {
+	            System.out.println("Exception "+ex);
+	        }	
+        	
+	        /**
+	         * CANTIDAD DE REPRODUCCIONES
+	         */
+        	if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
+        		aux.setCantReproducciones(Integer.parseInt(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
+        		System.out.println("CANT REPROS: " + publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+",""));
         	}else {
-        		System.out.println("SIN OWNER!");
-        	}
-            
-        	
-        	
-        	
-        	//DateFormat format = new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH);
-        	//aux.setDateTime(new SimpleDateFormat("MMMM d, yyyy", Locale.ENGLISH).parse(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("title")));
-        	
-        	if(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
-        		aux.setCantReproducciones(Integer.parseInt(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
-        		System.out.println("CANT REPROS: " + publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+",""));
-        	}else {
+        		aux.setCantReproducciones(null);
         		System.out.println("SIN CANT REPROS");
         	}
         	
-        	if(this.existElement(publications.get(i), FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
-        		aux.setCantShare(Integer.parseInt(publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
-        		System.out.println("Cant SHARE: " + publications.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+",""));
+        	/**
+	         * CANTIDAD DE SHARES
+	         */
+        	if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
+        		aux.setCantShare(Integer.parseInt(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
+        		System.out.println("Cant SHARE: " + publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+",""));
         	}else {
+        		aux.setCantShare(0);
         		System.out.println("SIN SHARE!");
         	}
         	
+        	aux.toString();
         	publicationsImpl.add(aux);
 		}
 		
@@ -203,18 +236,21 @@ public @Data class FacebookScrap {
 		}else {
 			return false;
 		}
-		/*
-		 * Esta es una forma más lenta de hacer el chequeo. Espera
-		 * hasta que encuentra la exception.
-		try {
-			element.findElement(By.xpath(xpathExpression));
-    		return true;
-			
-    	} catch (NoSuchElementException e) {
-    	    System.out.println("[ERROR] El elemento no se encuentra ");
-    		return false;
-    	}
-    	*/
+	}
+	
+	private void clickViewMoreTextContent(WebElement element, String xpathExpression) {
+		boolean verMasClicked = false;
+		while(this.existElement(element, xpathExpression) && (!verMasClicked)) {
+			WebElement we = element.findElement(By.xpath(xpathExpression));
+			if(we.isDisplayed()) {
+				we.click();
+				verMasClicked = true;
+			}else {
+				System.out.println("[ERROR] VER MAS TITLE NOT DISPLAYED");
+				
+			}
+		}
+				
 	}
 	
 }
