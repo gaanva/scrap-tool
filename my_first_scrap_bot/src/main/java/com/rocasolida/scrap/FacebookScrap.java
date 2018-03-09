@@ -27,47 +27,41 @@ import com.rocasolida.entities.Publication;
 import lombok.Data;
 
 
-public @Data class FacebookScrap {
+public @Data class FacebookScrap extends Scrap{
 	
-	private WebDriver driver;
-	private Credential access;
+	//private WebDriver this.getDriver();
+	//private Credential access;
 	
-	public FacebookScrap(WebDriver driver) {
+	public FacebookScrap() {
 		super();
-		this.driver = driver;
 	}
 	
-	public FacebookScrap(WebDriver driver, Credential access) {
-		super();
-		this.driver = driver;
-		this.access = access;
+	
+	public void  test() {
+		
+	}
+	
+	public boolean login(Credential access) {
+		this.navigateTo(FacebookConfig.URL_PROFILE);
+		WebElement formLogin = this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_FORM_LOGIN));
+		formLogin.findElement(By.xpath(FacebookConfig.XPATH_INPUT_MAIL_LOGIN)).sendKeys(this.getAccess().getUser());
+		formLogin.findElement(By.xpath(FacebookConfig.XPATH_INPUT_PASS_LOGIN)).sendKeys(this.getAccess().getPass());
+		formLogin.findElement(By.xpath(FacebookConfig.XPATH_BUTTON_LOGIN)).click();
+		this.getDriver().manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+		
+		if(loggedIn()){
+			super.setAccess(access);
+			return true;
+		}else {
+			return false;
+		}
+		
 	}
 	
 	public void obtainPublicationsAndComments() {
-		/*
-		 * [SCREEN SIZE]Debería ser una property de la aplicación. Si no le pones esto, 
-		 * cuando queres clickear un elemento, te dice que el elemento no está visible y por ende no lo podés manipular.
-		 * Selenium se basa en todo lo que sea Visual en pantalla.
-		 */
-		driver.manage().window().setSize(new Dimension(1920, 1080)); 
-		
-		if(this.access!=null) {
-			//driver.navigate().to(FacebookConfig.URL);
-			driver.navigate().to(FacebookConfig.URL_PROFILE);
-			driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
-			//try login
-        	this.login();
-        }
-		
-		/*
-		 *Si accesdes con un usuario de estos que te da brunolidewilde, puede ser que te redireccione a una página de configuracion de la página.
-		 *Por esto el acceso al perfil a scrapear lo hago luego de que se loguea. 
-		 */
-		driver.navigate().to(FacebookConfig.URL_PROFILE);
-		driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
-		
+		this.navigateTo(FacebookConfig.URL_PROFILE);
 		//Busco todas las publicaciones que se cargaron. (Si entras sin usuario logueado, te carga 16 publicaciones de una vez).
-		List<WebElement> publicationsElements = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+		List<WebElement> publicationsElements = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
 		/*
 		 * Si el elemento no te lo encuentra en el DOM (No se cargó aún), el findElements no tira excepción, sino que te devuelve la lista vacía.
 		 * Entonces..
@@ -75,7 +69,7 @@ public @Data class FacebookScrap {
 		
 		
 		
-		File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+		File scrFile = ((TakesScreenshot)this.getDriver()).getScreenshotAs(OutputType.FILE);
 
 		
 
@@ -83,12 +77,12 @@ public @Data class FacebookScrap {
         //Si momento 0 al cargar la página no hay publicaciones, entonces busco el botón más:
 		while(publicationsElements.size()==0) {
 			
-			if(driver.findElements(By.xpath(FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE)).size()==1) {
+			if(this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE)).size()==1) {
 				System.out.println("Show more");
-				WebDriverWait wait = new WebDriverWait(driver, 10); 
+				WebDriverWait wait = new WebDriverWait(this.getDriver(), 10); 
 				WebElement element = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE)));
 				
-				scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+				scrFile = ((TakesScreenshot)this.getDriver()).getScreenshotAs(OutputType.FILE);
 				try {
 				FileUtils.copyFile(scrFile, new File("c:\\tmp\\screenshot8888.png"));
 				} catch (IOException e) {
@@ -98,14 +92,14 @@ public @Data class FacebookScrap {
 				System.out.println("CLICK!");
 				element.click();
 			}
-			if(driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER)).size()>0) {
-				publicationsElements = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+			if(this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER)).size()>0) {
+				publicationsElements = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
 			}
 			
         }
-		publicationsElements = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+		publicationsElements = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
 		
-		File scrFile2 = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+		File scrFile2 = ((TakesScreenshot)this.getDriver()).getScreenshotAs(OutputType.FILE);
 
 		try {
 		FileUtils.copyFile(scrFile2, new File("c:\\tmp\\screenshot8887.png"));
@@ -199,7 +193,7 @@ public @Data class FacebookScrap {
         	//Por ahora solo me fijo 1 vez si tiene el boton de VER MAS COMENTARIOS
             try {
             	publications.get(i).findElement(By.xpath("//a[@class='UFIPagerLink']")).click();
-	    	    driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
+	    	    this.getDriver().manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
 	    	} catch (NoSuchElementException e) {
 	    	    System.out.println("Element Not Found");
 	    	    
@@ -224,6 +218,12 @@ public @Data class FacebookScrap {
        */
 	}
 	
+	
+	private void navigateTo(String url) {
+		this.getDriver().navigate().to(url);
+		this.getDriver().manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+	}
+	
 	/*
 	 * Pasarle el nodo que contiene los comentarios de una publicación. Me debería devolver la clase Comentario.
 	 */
@@ -244,7 +244,7 @@ public @Data class FacebookScrap {
 		while(isVisibleMoreMsgLnk) {
 			try {
 				publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)).click();
-	    	    driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+	    	    this.getDriver().manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
 	     	} catch (NoSuchElementException e) {
 	    	    System.out.println("NO EXISTE BOTON VER MAS MENSAJES EN LA PUBLICACION");
 	    	    isVisibleMoreMsgLnk = false;
@@ -253,23 +253,15 @@ public @Data class FacebookScrap {
 	}
 	
 	
-	private boolean login() {
-		WebElement formLogin = this.driver.findElement(By.xpath(FacebookConfig.XPATH_FORM_LOGIN));
-		formLogin.findElement(By.xpath(FacebookConfig.XPATH_INPUT_MAIL_LOGIN)).sendKeys(this.access.getUser());
-		formLogin.findElement(By.xpath(FacebookConfig.XPATH_INPUT_PASS_LOGIN)).sendKeys(this.access.getPass());
-		formLogin.findElement(By.xpath(FacebookConfig.XPATH_BUTTON_LOGIN)).click();
-		driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
-	    return (loggedIn())?true:false;
-		
-	}
+	
 	
 	private boolean loggedIn() {
 		try {
-			this.driver.findElement(By.xpath(FacebookConfig.XPATH_FORM_LOGIN));
+			this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_FORM_LOGIN));
 			System.out.println("[ERROR]Login error! check credentials provided");
 			return false;
     	} catch (NoSuchElementException e) {
-    	    System.out.println("[SUCCESS]Login Successfull! "+"usr: "+this.access.getUser());
+    	    System.out.println("[SUCCESS]Login Successfull! "+"usr: "+this.getAccess().getUser());
     	    return true;
     	}
 	}
