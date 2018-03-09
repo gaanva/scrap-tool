@@ -7,9 +7,23 @@ public final class FacebookConfig {
     
     /**FORM_LOGIN**/
 	public static String XPATH_FORM_LOGIN = "//form[contains(@id,'login_form')]";
-    public static String XPATH_INPUT_MAIL_LOGIN = "//input[contains(@id,'email')]"; 
-    public static String XPATH_INPUT_PASS_LOGIN = "//input[contains(@id,'pass')]";
-    public static String XPATH_BUTTON_LOGIN = "//label[contains(@id,'loginbutton')]";
+    public static String XPATH_INPUT_MAIL_LOGIN = ".//input[contains(@id,'email')]"; 
+    public static String XPATH_INPUT_PASS_LOGIN = ".//input[contains(@id,'pass')]";
+    public static String XPATH_BUTTON_LOGIN = ".//label[contains(@id,'loginbutton')]//input";
+    
+    /**CARGAR PUBLICACIONES**/
+    public static String XPATH_TIMELINE_MAINCOLUMN = "//div[@id='pagelet_timeline_main_column']";
+    public static String XPATH_SHOW_ALL_PHOTOS_LINK = "//div[@id='page_photos']//div[@class='_4z-w']//a";
+    public static String XPATH_SHOW_ALL_VIDEOS_LINK = "//div[@id='videos']//div[@class='_4z-w']//a";
+    public static String XPATH_SHOW_ALL_PUB_DETACADAS_LINK = "//div[@class='_4-u2 _3xaf _3-95 _4-u8']//div[@class='_4z-w']//a";
+    
+    public static String XPATH_START_PUBLICATIONS_TITLE = "//div[@class='_3-95']//span[text()='Publicaciones']"; //Busqueda de control para saber si ya están cargadas las publicaciones
+    //Para cargar publicaciones tengo que contar los hermanos siguientes /following-sibling::div[@class='_4-u2 _4-u8']
+    //public static String XPATH_PUBLICATIONS = "//div[@class='_3-95']//div[@class=_4-u2 _4-u8 and not(@id)]"; //Busqueda de control para saber si ya están cargadas las publicaciones
+    //Buscar los siguientes a partir del start publications
+    public static String XPATH_PPAL_BUTTON_SHOW_MORE = "//div[@id='pagelet_timeline_main_column']//a[contains(@class,'uiMorePagerPrimary')]";
+     
+    
     /**DATOS DE LA PUBLICACIÓN**/
     public static String XPATH_PUBLICATIONS_CONTAINER = "//div[contains(@class,'userContentWrapper')]";
     public static String XPATH_PUBLICATION_OWNER = ".//span[contains(@class,'fwn fcg')]//span[contains(@class,'fwb')]"; //getAttribute("aria-label")
@@ -19,6 +33,7 @@ public final class FacebookConfig {
     public static String XPATH_PUBLICATION_DATE_TIME = ".//abbr[contains(@class,'livetimestamp')]"; //getAttribute("title")
     public static String XPATH_PUBLICATION_TITLE = ".//div[contains(@class,'_5pbx userContent')]";
     public static String XPATH_PUBLICATION_TITLE_VER_MAS = ".//div[contains(@class,'_5pbx userContent')]//a[contains(@class,'see_more_link')]";
+    
     public static String XPATH_PUBLICATION_CANT_REPRO = ".//div[contains(@class,'_1t6k')]";
     public static String XPATH_PUBLICATION_CANT_SHARE = ".//a[contains(@class,'UFIShareLink')]";
     public static String XPATH_PUBLICATION_VER_MAS_MSJS = ".//a[contains(@class,'UFIPagerLink')]";

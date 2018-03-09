@@ -1,5 +1,7 @@
 package com.rocasolida.scrap;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -7,11 +9,16 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.NoSuchElementException;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Credential;
@@ -37,13 +44,6 @@ public @Data class FacebookScrap {
 	}
 	
 	public void obtainPublicationsAndComments() {
-		if(this.access!=null) {
-			driver.navigate().to(FacebookConfig.URL);
-			driver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);
-			//try login
-        	this.login();
-        }
-		
 		/*
 		 * [SCREEN SIZE]Debería ser una property de la aplicación. Si no le pones esto, 
 		 * cuando queres clickear un elemento, te dice que el elemento no está visible y por ende no lo podés manipular.
@@ -51,17 +51,72 @@ public @Data class FacebookScrap {
 		 */
 		driver.manage().window().setSize(new Dimension(1920, 1080)); 
 		
+		if(this.access!=null) {
+			//driver.navigate().to(FacebookConfig.URL);
+			driver.navigate().to(FacebookConfig.URL_PROFILE);
+			driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
+			//try login
+        	this.login();
+        }
+		
 		/*
 		 *Si accesdes con un usuario de estos que te da brunolidewilde, puede ser que te redireccione a una página de configuracion de la página.
 		 *Por esto el acceso al perfil a scrapear lo hago luego de que se loguea. 
 		 */
 		driver.navigate().to(FacebookConfig.URL_PROFILE);
-		driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);	
+		driver.manage().timeouts().pageLoadTimeout(10, TimeUnit.SECONDS);
 		
 		//Busco todas las publicaciones que se cargaron. (Si entras sin usuario logueado, te carga 16 publicaciones de una vez).
 		List<WebElement> publicationsElements = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
-		System.out.println("SE ENCONTRARON UN TOTAL DE " + publicationsElements.size() + "PUBLICACIONES");
-        
+		/*
+		 * Si el elemento no te lo encuentra en el DOM (No se cargó aún), el findElements no tira excepción, sino que te devuelve la lista vacía.
+		 * Entonces..
+		 */
+		
+		
+		
+		File scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+
+		
+
+		
+        //Si momento 0 al cargar la página no hay publicaciones, entonces busco el botón más:
+		while(publicationsElements.size()==0) {
+			
+			if(driver.findElements(By.xpath(FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE)).size()==1) {
+				System.out.println("Show more");
+				WebDriverWait wait = new WebDriverWait(driver, 10); 
+				WebElement element = wait.until(ExpectedConditions.elementToBeClickable(By.xpath(FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE)));
+				
+				scrFile = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+				try {
+				FileUtils.copyFile(scrFile, new File("c:\\tmp\\screenshot8888.png"));
+				} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				}
+				System.out.println("CLICK!");
+				element.click();
+			}
+			if(driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER)).size()>0) {
+				publicationsElements = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+			}
+			
+        }
+		publicationsElements = driver.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+		
+		File scrFile2 = ((TakesScreenshot)driver).getScreenshotAs(OutputType.FILE);
+
+		try {
+		FileUtils.copyFile(scrFile2, new File("c:\\tmp\\screenshot8887.png"));
+		} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		}
+
+		
+				
+		
 		List<Publication> publicationsImpl= new ArrayList<Publication>();
         
         for (int i = 0; i < publicationsElements.size(); i++) {
@@ -127,7 +182,9 @@ public @Data class FacebookScrap {
         	}
         	
         	//Lo almaceno en un array.
+        	System.out.println("CAPTURADOS_ " + aux.toString());
         	publicationsImpl.add(aux);
+        	
 		}
 		
 		this.printPublications(publicationsImpl);
@@ -170,7 +227,7 @@ public @Data class FacebookScrap {
 	/*
 	 * Pasarle el nodo que contiene los comentarios de una publicación. Me debería devolver la clase Comentario.
 	 */
-	private void obtainPublicationComments(List<WebElement> comments) {
+	private void getPublicationComments(List<WebElement> comments) {
 		//Comentarios de una publicación
         for (int i = 0; i < comments.size(); i++) {
         	System.out.println(" =============== "+ i +" DATOS COMENTARIO ================= ");
@@ -183,13 +240,14 @@ public @Data class FacebookScrap {
 	}
 	
 	private void loadAllPublicationComments(WebElement publication) {
-		while(true) {
+		boolean isVisibleMoreMsgLnk = true;
+		while(isVisibleMoreMsgLnk) {
 			try {
-	    	    publication.findElement(By.xpath("//a[@class='UFIPagerLink']")).click();
-	    	    driver.manage().timeouts().implicitlyWait(10, TimeUnit.SECONDS);
-	    	} catch (NoSuchElementException e) {
-	    	    System.out.println("Element Not Found");
-	    	    break;
+				publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)).click();
+	    	    driver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+	     	} catch (NoSuchElementException e) {
+	    	    System.out.println("NO EXISTE BOTON VER MAS MENSAJES EN LA PUBLICACION");
+	    	    isVisibleMoreMsgLnk = false;
 	    	}
 		}
 	}
@@ -240,6 +298,7 @@ public @Data class FacebookScrap {
 	}
 	
 	private void printPublications(List<Publication> lista) {
+		System.out.println("SE ENCONTRARON UN TOTAL DE " + lista.size() + "PUBLICACIONES");
 		for (int j = 0; j < lista.size(); j++) {
 			System.out.println("============== POS " + j + "===============");
 			System.out.println(lista.get(j).toString());

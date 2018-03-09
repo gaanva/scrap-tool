@@ -21,12 +21,11 @@ public class Application {
 		DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
 		capabilities.setCapability("phantomjs.binary.path","C:\\Users\\gvaldez\\drivers\\phantomjs.exe");
 		capabilities.setCapability("phantomjs.page.settings.userAgent","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36");
-		
 		//Creo el webdriver
 		WebDriver driver = new PhantomJSDriver(capabilities);
 		//Accedo a la página que quiero scrapear
 		
-		Credential access = null;//new Credential("estelaquilmes2018@gmail.com","qsocialnow2018",0L,"");
+		Credential access = new Credential("estelaquilmes2018@gmail.com","qsocialnow2018",0L,"");
 		FacebookScrap fs = new FacebookScrap(driver, access);
 		fs.obtainPublicationsAndComments();
 		driver.quit();
