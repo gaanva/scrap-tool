@@ -87,6 +87,47 @@ public @Data class FacebookScrap extends Scrap{
     		this.getActions().perform();
     		aux = this.extractPublicationData(publicationsElements.get(i));
     		
+    		
+    		List<WebElement> comentarios= new ArrayList<WebElement>();
+    		//WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(".//div[@class='_3b-9 _j6a']"));
+    		//Tiene comentarios la publicación?
+    		if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
+    			WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER));
+    			if(this.existElement(publicationCommentSection, FacebookConfig.XPATH_COMMENTS)) {
+    				comentarios =  publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
+    			}else{
+    				if(this.existElement(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)) {
+    					publicationCommentSection.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)).click();
+    					comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
+    				}else {
+    					System.out.println("[ERROR] no se encuentra el botón VER MAS mensajes.");
+    				}		
+    			}
+    		}else {
+    			System.out.println("[INFO] Publiación sin comentarios!");
+    		}
+    		
+    		for(int j=0; j<comentarios.size(); j++) {
+    			//System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)));
+    			//System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)));
+    		}
+    		
+    		
+/*    		
+    		- paso 0) hacer click en Ver más mensajes. (VER MAS MSJ LiNK)
+			- Buscar contenedor de los comentarios y replies: div[@class='_3b-9 _j6a']
+			- Ver mas comentarios?
+
+    		- Recorrer de 1 en 1. child.findElement(By.xpath("//following-sibling::*"));
+    		  SI:
+    		    - Es comment? exist? (.//span[contains(@class,' UFICommentActorAndBody')])
+    		o
+    		    - Es Reply? exist? (.//div[contains(@class,' UFIReplyList')])
+
+    		PAra ambos es el mismo tratamiento luego!
+
+*/ 
+    		
     		publicationsImpl.add(this.extractPublicationData(publicationsElements.get(i)));
         }
         this.printPublications(publicationsImpl);

@@ -4,6 +4,7 @@ package com.rocasolida;
 public final class FacebookConfig {
 	public static String URL = "https://www.facebook.com/";
 	public static String URL_PROFILE =  "https://www.facebook.com/mauriciomacri";
+	////title[@lang='en']
 	public static Integer CANT_PUBLICATIONS_TO_BE_LOAD = 10; //TODO Se puede hacer lo mismo con time stamp.
     
     /**FORM_LOGIN**/
@@ -29,10 +30,17 @@ public final class FacebookConfig {
      
     
     /**DATOS DE LA PUBLICACIÓN**/
+    
+    
+    
     public static String XPATH_PUBLICATIONS_CONTAINER = "//div[contains(@class,'userContentWrapper')]";
     public static String XPATH_PUBLICATION_OWNER = ".//span[contains(@class,'fwn fcg')]//span[contains(@class,'fwb')]"; //getAttribute("aria-label")
     //TIEMSTAMP: HUSO HORARIO GMT (sumarle 4 horas para saber fecha de post en Arg.)
     public static String XPATH_PUBLICATION_TIMESTAMP = ".//abbr[contains(@class,'livetimestamp')]"; //getAttribute("data-utime")
+    
+    //Condición por timeStamp
+    public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION = ".//abbr[@data-utime]";
+    
     //DATE_TIME: PONE HUSO HORARIO ARGENTINA (GMT+4). Diff de 4hs.
     public static String XPATH_PUBLICATION_DATE_TIME = ".//abbr[contains(@class,'livetimestamp')]"; //getAttribute("title")
     public static String XPATH_PUBLICATION_TITLE = ".//div[contains(@class,'_5pbx userContent')]";
@@ -40,6 +48,7 @@ public final class FacebookConfig {
     
     public static String XPATH_PUBLICATION_CANT_REPRO = ".//div[contains(@class,'_1t6k')]";
     public static String XPATH_PUBLICATION_CANT_SHARE = ".//a[contains(@class,'UFIShareLink')]";
+    
     public static String XPATH_PUBLICATION_VER_MAS_MSJS = ".//a[contains(@class,'UFIPagerLink')]";
     /**DATOS DE LOS MENSAJES**/   
     
@@ -48,13 +57,16 @@ public final class FacebookConfig {
      * COMENTARIOS
      */
     public static String XPATH_COMMENTS_CONTAINER = ".//div[contains(@class,'UFIContainer')]";
-    public static String XPATH_COMMENTS = ".//span[contains(@class,' UFICommentActorAndBody')]";
-    public static String XPATH_USER_COMMENT_ID = ".//span[contains(@class,' UFICommentActorName')]"; //getAttribute("data-hovercard") 
+    //public static String XPATH_COMMENTS = ".//span[contains(@class,' UFICommentActorAndBody')]";
+    public static String XPATH_COMMENTS = ".//div//*"; //-->Toma como base el CONTAINER.
+    public static String XPATH_USER_ID_COMMENT = ".//span[contains(@class,' UFICommentActorName')]"; //getAttribute("data-hovercard") 
     //RECORTAR desde 'id' hasta '&': /ajax/hovercard/hovercard.php?id=100000706798375&extragetparams=%7B%22is_public%22%3Atrue%2C%22hc_location%22%3A%22ufi%22%7D 
     public static String XPATH_USER_COMMENT = ".//span[@class,'UFICommentBody']";
     
     public static String XPATH_USER_COMMENT_ACTIONS = ".//div[contains(@class,'UFICommentActions')].//abbr";////getAttribute("data-utime")
     
+    
+    //.findElements(By.xpath("//*[self::a|self::span][@id='foobar']"));
     
     
     //Texto de la publicación
