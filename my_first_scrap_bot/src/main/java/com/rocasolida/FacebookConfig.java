@@ -4,6 +4,7 @@ package com.rocasolida;
 public final class FacebookConfig {
 	public static String URL = "https://www.facebook.com/";
 	public static String URL_PROFILE =  "https://www.facebook.com/mauriciomacri";
+	public static Integer CANT_PUBLICATIONS_TO_BE_LOAD = 10;
     
     /**FORM_LOGIN**/
 	public static String XPATH_FORM_LOGIN = "//form[contains(@id,'login_form')]";
@@ -21,7 +22,10 @@ public final class FacebookConfig {
     //Para cargar publicaciones tengo que contar los hermanos siguientes /following-sibling::div[@class='_4-u2 _4-u8']
     //public static String XPATH_PUBLICATIONS = "//div[@class='_3-95']//div[@class=_4-u2 _4-u8 and not(@id)]"; //Busqueda de control para saber si ya están cargadas las publicaciones
     //Buscar los siguientes a partir del start publications
-    public static String XPATH_PPAL_BUTTON_SHOW_MORE = "//div[@id='pagelet_timeline_main_column']//a[contains(@class,'uiMorePagerPrimary')]";
+    
+    
+    //public static String XPATH_PPAL_BUTTON_SHOW_MORE = "//div[@id='pagelet_timeline_main_column']//a[contains(@class,'uiMorePagerPrimary')]";
+    public static String XPATH_PPAL_BUTTON_SHOW_MORE = "//a[contains(@class,'uiMorePagerPrimary')]";
      
     
     /**DATOS DE LA PUBLICACIÓN**/

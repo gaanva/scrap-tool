@@ -4,6 +4,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.WebDriverWait;
@@ -28,7 +29,7 @@ public @Data class Scrap {
 	private WebDriver driver;
 	private Credential access;
 	private WebDriverWait waitDriver;
-	
+	private Actions actions;
 	public Scrap() {
 		
 		
@@ -41,6 +42,8 @@ public @Data class Scrap {
 		this.waitDriver = new WebDriverWait(this.driver, EXPLICIT_WAIT);
 		
 		this.setScreenDimension();
+		this.driver.manage().window().maximize();
+		this.actions = new Actions(this.driver);
 		
 	}
 	

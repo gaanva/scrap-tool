@@ -1,7 +1,5 @@
 package com.rocasolida.scrap;
 
-import java.io.File;
-import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -9,14 +7,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.TimeoutException;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Credential;
@@ -26,6 +23,9 @@ import lombok.Data;
 
 
 public @Data class FacebookScrap extends Scrap{
+	
+	private Long timeStampCorte; //Un mínimo de fecha en la que tiene que correr. Por default, sería la fecha de Ejecución.
+	
 	
 	public FacebookScrap() {
 		super();
@@ -54,9 +54,103 @@ public @Data class FacebookScrap extends Scrap{
 	
 	
 	public void obtainPublicationsLoggedIn() {
-		if(this.existElement(null, FacebookConfig.XPATH_BUTTON_LOGIN)) {
-			
+		//while(!this.existElement(null, FacebookConfig.XPATH_PUBLICATION_TITLE)) {
+		this.getDriver().navigate().to(FacebookConfig.URL_PROFILE);
+		//while(this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).size()==0 &&
+		while(!(this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER)).size()>FacebookConfig.CANT_PUBLICATIONS_TO_BE_LOAD)) {
+			//if(!(this.existElement(null, FacebookConfig.XPATH_SHOW_ALL_PHOTOS_LINK))&&!(this.existElement(null, FacebookConfig.XPATH_SHOW_ALL_PUB_DETACADAS_LINK))&&!(this.existElement(null, FacebookConfig.XPATH_SHOW_ALL_VIDEOS_LINK))) {
+			if((this.existElement(null, FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE))) {
+				//this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE)).click();
+				//System.out.println("Se hizo click en show more");
+				//this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE)).sendKeys(Keys.PAGE_DOWN);
+				JavascriptExecutor jse = (JavascriptExecutor)this.getDriver();
+				jse.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+				System.out.println("Se hizo scroll");
+				
+			}else {
+				System.out.println("[ERROR] Se esperaba encontrar el botón de Show More. Expression: " + FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE);
+				break;
+			}
 		}
+		//Extraer las publicaciones.
+		List<WebElement> publicationsElements = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+		System.out.println("Cant. Publicaciones: " + publicationsElements.size() );
+		
+		List<Publication> publicationsImpl= new ArrayList<Publication>();
+		
+		for (int i = 0; i < publicationsElements.size(); i++) {
+        	System.out.println(" =============== "+ i +" DATOS PUBLICACIÓN ================= ");
+        	Publication aux = new Publication();
+        	
+        	//Posiciona el cursor en la publicación a scrapear
+    		this.getActions().moveToElement(publicationsElements.get(i));
+    		this.getActions().perform();
+    		publicationsImpl.add(this.extractPublicationData(publicationsElements.get(i)));
+        }
+        this.printPublications(publicationsImpl);
+	}
+	
+	public Publication extractPublicationData(WebElement publication){
+		Publication aux = new Publication();
+		/**
+    	 * TIMESTAMP
+    	 * El timestamp viene en GMT.
+    	 */
+    	aux.setTimeStamp(Long.parseLong(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
+    	
+    	/**
+    	 * TITULO
+    	 * TODO HAY QUE VER QUE PASA CUANDO EL TEXTO DEL TITULO ES MUY LARGO... SI RECARGA LA PAGINA O LA MANTIENE EN LA MISMA.
+    	 */
+    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_TITLE)) {
+    		//puede ser que una publicación no tenga título y puede ser que tenga un link de "ver más", al cual hacerle click.
+    		this.clickViewMoreTextContent(publication, FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS);
+    		aux.setTitulo(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
+    	}else {
+    		aux.setTitulo(null);
+    	}
+    	
+    	/**
+    	 * OWNER
+    	 * La pubicación siempre tiene un OWNER.
+    	 */
+    	aux.setOwner(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
+    	/**
+    	 * DATETIME
+    	 * Tener en cuenta que es GMT+4, porque es el del usuario. (controlar cuando la cuenta a scrapear sea de otro país, qué muestra?
+    	 * la del usuario que consulta o la del owner de la cuenta?.)
+    	 * TODO Si son posts, anteriores al día de la fecha, el formato del String cambia a: martes, 6 de marzo de 2018 a las 6:59
+    	 */
+    	String d = (publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP))).getAttribute("title");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+        try
+        {        	
+            Date date = simpleDateFormat.parse(d);
+            aux.setDateTime(date);
+        }
+        catch (ParseException ex)
+        {
+            System.out.println("Exception "+ex);
+        }	
+    	
+        /**
+         * CANTIDAD DE REPRODUCCIONES
+         */
+    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
+    		aux.setCantReproducciones(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
+    	}else {
+    		aux.setCantReproducciones(null);
+    	}
+    	/**
+         * CANTIDAD DE SHARES
+         */
+    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
+    		aux.setCantShare(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
+    	}else {
+    		aux.setCantShare(0);
+    	}
+    	
+    	return aux;
 	}
 	
 	public void obtainPublicationsAndCommentsNotLoggedIn() {
@@ -246,16 +340,14 @@ public @Data class FacebookScrap extends Scrap{
     	}
 	}
 	
+	
+	
 	private boolean existElement(WebElement element, String xpathExpression) {
-		return this.getWaitDriver().until(ExpectedConditions.or(ExpectedConditions.presenceOfElementLocated(By.xpath(xpathExpression))));
-		//return this.getWaitDriver().until(ExpectedConditions.or(ExpectedConditions.visibilityOf(element)));
-		
-		/*
 		if(element==null)
 			return ((this.getDriver().findElements(By.xpath(xpathExpression))).size() > 0);
 		else
 			return ((element.findElements(By.xpath(xpathExpression))).size() > 0);
-		 */
+		
 	}
 	
 	private void clickViewMoreTextContent(WebElement element, String xpathExpression) {
