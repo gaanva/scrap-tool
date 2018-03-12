@@ -65,7 +65,7 @@ public @Data class FacebookScrap extends Scrap{
 				//this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE)).sendKeys(Keys.PAGE_DOWN);
 				JavascriptExecutor jse = (JavascriptExecutor)this.getDriver();
 				jse.executeScript("window.scrollTo(0, document.body.scrollHeight)");
-				System.out.println("Se hizo scroll");
+				System.out.println("[SCROLL] Executed.");
 				
 			}else {
 				System.out.println("[ERROR] Se esperaba encontrar el botón de Show More. Expression: " + FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE);
@@ -85,6 +85,8 @@ public @Data class FacebookScrap extends Scrap{
         	//Posiciona el cursor en la publicación a scrapear
     		this.getActions().moveToElement(publicationsElements.get(i));
     		this.getActions().perform();
+    		aux = this.extractPublicationData(publicationsElements.get(i));
+    		
     		publicationsImpl.add(this.extractPublicationData(publicationsElements.get(i)));
         }
         this.printPublications(publicationsImpl);
@@ -300,8 +302,6 @@ public @Data class FacebookScrap extends Scrap{
        */
 	}
 	
-	
-	
 	/*
 	 * Pasarle el nodo que contiene los comentarios de una publicación. Me debería devolver la clase Comentario.
 	 */
@@ -322,8 +322,7 @@ public @Data class FacebookScrap extends Scrap{
 		while(isVisibleMoreMsgLnk) {
 			try {
 				publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)).click();
-	    	    this.getDriver().manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
-	     	} catch (NoSuchElementException e) {
+	    	} catch (NoSuchElementException e) {
 	    	    System.out.println("NO EXISTE BOTON VER MAS MENSAJES EN LA PUBLICACION");
 	    	    isVisibleMoreMsgLnk = false;
 	    	}
