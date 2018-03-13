@@ -1,19 +1,20 @@
 package com.rocasolida.scrap;
 
+import java.io.File;
+import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
-import org.openqa.selenium.TimeoutException;
+import org.openqa.selenium.OutputType;
+import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
-import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Credential;
@@ -93,23 +94,32 @@ public @Data class FacebookScrap extends Scrap{
     		//Tiene comentarios la publicación?
     		if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
     			WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER));
+    			this.ShowMoreClick(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS); //Carga todos los comentarios existentes
+    			comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
+    			/*
     			if(this.existElement(publicationCommentSection, FacebookConfig.XPATH_COMMENTS)) {
     				comentarios =  publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
     			}else{
+    				
+    				
+    				
     				if(this.existElement(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)) {
+    					
     					publicationCommentSection.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)).click();
     					comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
     				}else {
     					System.out.println("[ERROR] no se encuentra el botón VER MAS mensajes.");
     				}		
     			}
+    			*/
     		}else {
-    			System.out.println("[INFO] Publiación sin comentarios!");
+    			aux.setComments(null);
+    			System.out.println("[INFO] Publicación sin comentarios!");
     		}
     		
     		for(int j=0; j<comentarios.size(); j++) {
-    			//System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)));
-    			//System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)));
+    			System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
+    			System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)).getAttribute("data-hovercard"));
     		}
     		
     		
@@ -131,6 +141,38 @@ public @Data class FacebookScrap extends Scrap{
     		publicationsImpl.add(this.extractPublicationData(publicationsElements.get(i)));
         }
         this.printPublications(publicationsImpl);
+	}
+	
+	/**
+	 * Si existe el botón de show more, entonces lo clickea, hasta que se cargaron todos los mensajes
+	 * para luego obtenerlos con un XPATH query y extraerle los datos.
+	 * Me servirá para las replies y para los comentarios.
+	 */
+	public void ShowMoreClick(WebElement container, String xPathExpression) {
+		WebElement showMoreLink;
+		int i=0;
+		while(this.existElement(container, xPathExpression)) {
+			System.out.println("pase por acá: " + i + "veces");
+			showMoreLink = container.findElement(By.xpath(xPathExpression));
+			this.getActions().moveToElement(showMoreLink);
+    		this.getActions().perform();
+    		try {
+    			showMoreLink.click();
+    		}catch (Exception e){
+    			File scrFile = ((TakesScreenshot)this.getDriver()).getScreenshotAs(OutputType.FILE);
+
+    			try {
+    			FileUtils.copyFile(scrFile, new File("c:\\tmp\\screen0000001.png"));
+    			} catch (IOException e1) {
+    			// TODO Auto-generated catch block
+    				e1.printStackTrace();
+    			}
+    		}
+    		
+    		
+    		i=i+1;
+    		//Por click carga cerca de 50 mensajes.
+		}
 	}
 	
 	public Publication extractPublicationData(WebElement publication){

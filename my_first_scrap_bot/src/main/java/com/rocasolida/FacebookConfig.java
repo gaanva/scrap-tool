@@ -57,11 +57,11 @@ public final class FacebookConfig {
      * COMENTARIOS
      */
     public static String XPATH_COMMENTS_CONTAINER = ".//div[contains(@class,'UFIContainer')]";
-    //public static String XPATH_COMMENTS = ".//span[contains(@class,' UFICommentActorAndBody')]";
-    public static String XPATH_COMMENTS = ".//div//*"; //-->Toma como base el CONTAINER.
-    public static String XPATH_USER_ID_COMMENT = ".//span[contains(@class,' UFICommentActorName')]"; //getAttribute("data-hovercard") 
+    public static String XPATH_COMMENTS = ".//span[contains(@class,' UFICommentActorAndBody')]";
+    //public static String XPATH_COMMENTS = ".//div//*"; //-->Toma como base el CONTAINER.
+    public static String XPATH_USER_ID_COMMENT = ".//a[contains(@class,' UFICommentActorName')]"; //getAttribute("data-hovercard") 
     //RECORTAR desde 'id' hasta '&': /ajax/hovercard/hovercard.php?id=100000706798375&extragetparams=%7B%22is_public%22%3Atrue%2C%22hc_location%22%3A%22ufi%22%7D 
-    public static String XPATH_USER_COMMENT = ".//span[@class,'UFICommentBody']";
+    public static String XPATH_USER_COMMENT = ".//span[contains(@class,'UFICommentBody')]//*";
     
     public static String XPATH_USER_COMMENT_ACTIONS = ".//div[contains(@class,'UFICommentActions')].//abbr";////getAttribute("data-utime")
     
