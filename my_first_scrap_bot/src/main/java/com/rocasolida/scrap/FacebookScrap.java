@@ -88,7 +88,7 @@ public @Data class FacebookScrap extends Scrap{
     		this.getActions().perform();
     		aux = this.extractPublicationData(publicationsElements.get(i));
     		
-    		
+    		System.out.println("PUBLICATION TITLE: "+aux.getTitulo());
     		List<WebElement> comentarios= new ArrayList<WebElement>();
     		//WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(".//div[@class='_3b-9 _j6a']"));
     		//Tiene comentarios la publicación?
@@ -96,6 +96,7 @@ public @Data class FacebookScrap extends Scrap{
     			WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER));
     			this.ShowMoreClick(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS); //Carga todos los comentarios existentes
     			comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
+    			System.out.println("Cantidad de comentarios: " + comentarios.size());
     			/*
     			if(this.existElement(publicationCommentSection, FacebookConfig.XPATH_COMMENTS)) {
     				comentarios =  publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
@@ -117,11 +118,12 @@ public @Data class FacebookScrap extends Scrap{
     			System.out.println("[INFO] Publicación sin comentarios!");
     		}
     		
+    		/*
     		for(int j=0; j<comentarios.size(); j++) {
     			System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
     			System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)).getAttribute("data-hovercard"));
     		}
-    		
+    		*/
     		
 /*    		
     		- paso 0) hacer click en Ver más mensajes. (VER MAS MSJ LiNK)
@@ -152,26 +154,45 @@ public @Data class FacebookScrap extends Scrap{
 		WebElement showMoreLink;
 		int i=0;
 		while(this.existElement(container, xPathExpression)) {
-			System.out.println("pase por acá: " + i + "veces");
+			i=i+1;
+			
+			try {
 			showMoreLink = container.findElement(By.xpath(xPathExpression));
-			this.getActions().moveToElement(showMoreLink);
-    		this.getActions().perform();
-    		try {
-    			showMoreLink.click();
-    		}catch (Exception e){
-    			File scrFile = ((TakesScreenshot)this.getDriver()).getScreenshotAs(OutputType.FILE);
-
-    			try {
-    			FileUtils.copyFile(scrFile, new File("c:\\tmp\\screen0000001.png"));
-    			} catch (IOException e1) {
-    			// TODO Auto-generated catch block
-    				e1.printStackTrace();
-    			}
-    		}
+			
+			//if(this.getWaitDriver().until(ExpectedConditions.invisibilityOfAllElements(showMoreLink.findElements(By.xpath("//span[@role='progressbar']"))))) {
+			
+				this.getActions().moveToElement(showMoreLink);
+	    		this.getActions().perform();
+	    		try {
+	    			showMoreLink.click();
+	    			System.out.println("Click en showMore messgaes button: " + i + " veces");
+	    			
+	    			
+	    			//Esperar a que desaparezca el elemento:
+	    			
+	    			/* dentro del Anchor. 
+	    			 *span[@role='progressbar']
+	    			 */
+	    		}catch (Exception e){
+	    			System.out.println("[ERROR] No se pudo hacer click.");
+	    		}
+    		//ExpectedConditions.elementToBeClickable(By.id(>someid>))
+    		//ESpero a que desaparezca el spinner
     		
+			//}   		
     		
-    		i=i+1;
     		//Por click carga cerca de 50 mensajes.
+			}catch (Exception e) {
+				//Hay veces que no encuentra el link.... salvo que sea porque desaparece el link más adelante
+				File scrFile = ((TakesScreenshot)this.getDriver()).getScreenshotAs(OutputType.FILE);
+
+				try {
+				FileUtils.copyFile(scrFile, new File("c:\\tmp\\screenshot1.png"));
+				} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+				}
+			}
 		}
 	}
 	
@@ -432,6 +453,11 @@ public @Data class FacebookScrap extends Scrap{
 		
 	}
 	
+	/**
+	 * Es el 'more text' que puede aparecer en el titulo de una publicación cuando es muy larga...
+	 * @param element
+	 * @param xpathExpression
+	 */
 	private void clickViewMoreTextContent(WebElement element, String xpathExpression) {
 		boolean verMasClicked = false;
 		while(this.existElement(element, xpathExpression) && (!verMasClicked)) {
