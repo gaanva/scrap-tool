@@ -14,7 +14,9 @@ import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
 import org.openqa.selenium.TakesScreenshot;
+import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.ExpectedCondition;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Comment;
@@ -58,6 +60,7 @@ public @Data class FacebookScrap extends Scrap{
 	public void obtainPublicationsLoggedIn() {
 		this.getDriver().navigate().to(FacebookConfig.URL_PROFILE);
 		//este while presiona el botón show more pubilcations hasta que la cantidad de publicaciones es mayor a la estática.
+		
 		while(!(this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER)).size()>FacebookConfig.CANT_PUBLICATIONS_TO_BE_LOAD)) {
 			if((this.existElement(null, FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE))) {
 				JavascriptExecutor jse = (JavascriptExecutor)this.getDriver();
@@ -67,6 +70,7 @@ public @Data class FacebookScrap extends Scrap{
 				 * hasta que muestra las publicaciones.
 				 */
 				jse.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+				this.waitForJStoLoad();
 				System.out.println("[SCROLL] Executed.");
 			}else {
 				System.out.println("[ERROR] Se esperaba encontrar el botón de Show More. Expression: " + FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE);
@@ -99,92 +103,52 @@ public @Data class FacebookScrap extends Scrap{
     		
     		//WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(".//div[@class='_3b-9 _j6a']"));
     		//Tiene comentarios la publicación?
+    		//Si la publicación tiene comentarios...
+			if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
+				WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER));
+				this.ShowMoreClick(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS);
+				//Extraigo los comentarios...
+        		comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
+        		for(int j=0; j<comentarios.size(); j++) {
+        			comments.add(this.extractCommentData(comentarios.get(j)));
+    	    	}
+        		System.out.println("[INFO] CAntidad comentarios: " + comments.size());
+			}
     		
-    		//Si hago el try/catch de la busqueda del elemenot espero a que le de time out de búsqueda.
-    		if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
-    			WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER));
-    			//Hago click en el "Ver Más" comentarios
-    			this.ShowMoreClickPro(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS);
-    			//Extraigo los comentarios...
-    			comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
-    			for(int j=0; j<comentarios.size(); j++) {
-	    			Comment auxComment = new Comment();
-					auxComment.setMensaje(comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
-	    			//System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
-	    			
-					//Me falta cortar el id, y pasarlo a long.
-					//System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)).getAttribute("data-hovercard"));
-	    			
-					comments.add(auxComment);
-	    		}
-    			//Cantida de comentarios que inicialmente se mostraban en el post
-    			int cantComentariosIni = comments.size();
-    			
-    			System.out.println("Cantidad comentarios Ini: " + cantComentariosIni);
-    			
-    			//Hago click en el "Ver Más" comentarios
-    			this.ShowMoreClickPro(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS);
-    			//Extraigo los comentarios...
-    			comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
-    			//cantidad de comentarios en la página
-    			int cantComentariosPost = comentarios.size();
-    			//Mientras la cantidad de comentarios sea mayor a la anterior...
-    			while(cantComentariosPost>cantComentariosIni){
-    				cantComentariosIni = comments.size();
-    				//Tengo nuevos mensajes para procesar
-    				for(int j=cantComentariosIni; j<comentarios.size(); j++) {
-    	    			Comment auxComment = new Comment();
-    					auxComment.setMensaje(comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
-    	    			//System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
-    	    			
-    					//Me falta cortar el id, y pasarlo a long.
-    					//System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)).getAttribute("data-hovercard"));
-    	    			
-    					comments.add(auxComment);
-    	    		}
-    				//Hago click en el "Ver Más" comentarios
-        			this.ShowMoreClickPro(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS); //Carga todos los comentarios existentes
-        			//Extraigo los comentarios...
-        			/**
-        			 * Se podría mejorar la query para que extraiga desde XPATH, a partir de la posición que necesito.
-        			 */
-        			comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
-    				cantComentariosPost = comentarios.size();
-    			}//ya procesé todos los mensajes del post
-    			
-    			//comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
-    			
-    			
-    			System.out.println("Se guardan de la publicación un TOTAL de comentarios: " + comments.size());
-    			aux.setComments(comments);
-    			/*
-    			if(this.existElement(publicationCommentSection, FacebookConfig.XPATH_COMMENTS)) {
-    				comentarios =  publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
-    			}else{
-    				
-    				
-    				
-    				if(this.existElement(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)) {
-    					
-    					publicationCommentSection.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS)).click();
-    					comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
-    				}else {
-    					System.out.println("[ERROR] no se encuentra el botón VER MAS mensajes.");
-    				}		
-    			}
-    			*/
-    		}else {
+    		
+    		
+    		
+    		
+    		/*
+    		//Si la publicación tiene comentarios...
+			if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
+				int cantComentariosIni = 0;
+				//Obtengo el elemnto con todos los comentarios...
+				WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER));
+        		//Extraigo los comentarios...
+        		comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
+				do {
+	    			for(int j=0; j<comentarios.size(); j++) {
+	        			comments.add(this.extractCommentData(comentarios.get(j)));
+	    	    	}
+	        		cantComentariosIni = comentarios.size();
+	        		//Hago click en el "Ver Más" comentarios. Si no existe, capturo el error y sigo con la lógica.
+	        		this.ShowMoreClickPro(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS);
+	        		//SI HAY MAS COMENTARIOS: Se supone que la cantidad de comentarios totales va a ser mayor que la inicial.
+	        		comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
+	    		}while(cantComentariosIni < comentarios.size());
+			}else {
     			aux.setComments(null);
     			System.out.println("[INFO] Publicación sin comentarios!");
     		}
-    		
-    		/*
-    		for(int j=0; j<comentarios.size(); j++) {
-    			System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
-    			System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)).getAttribute("data-hovercard"));
-    		}
-    		*/
-    		
+			
+    		System.out.println("[INFO] CANTIDAD DE COMENTARIOS: "+ comments.size());
+			*/
+			aux.setComments(comments);
+			publicationsImpl.add(aux);
+			
+			
+		}    		
 /*    		
     		- paso 0) hacer click en Ver más mensajes. (VER MAS MSJ LiNK)
 			- Buscar contenedor de los comentarios y replies: div[@class='_3b-9 _j6a']
@@ -199,9 +163,7 @@ public @Data class FacebookScrap extends Scrap{
     		PAra ambos es el mismo tratamiento luego!
 
 */  		
-    		publicationsImpl.add(this.extractPublicationData(publicationsElements.get(i)));
-        }
-        this.printPublications(publicationsImpl);
+		this.printPublications(publicationsImpl);
 	}
 	
 	/**
@@ -215,14 +177,12 @@ public @Data class FacebookScrap extends Scrap{
 		while(this.existElement(container, xPathExpression)) {
 			i=i+1;
 			try {
-			showMoreLink = container.findElement(By.xpath(xPathExpression));
-			
-			//if(this.getWaitDriver().until(ExpectedConditions.invisibilityOfAllElements(showMoreLink.findElements(By.xpath("//span[@role='progressbar']"))))) {
-			this.moveTo(showMoreLink);
+				showMoreLink = container.findElement(By.xpath(xPathExpression));
+				this.moveTo(showMoreLink);
 				
 	    		try {
 	    			showMoreLink.click();
-	    			
+	    			this.waitForJStoLoad();
 	    			
 	    			
 	    			//Esperar a que desaparezca el elemento:
@@ -240,20 +200,23 @@ public @Data class FacebookScrap extends Scrap{
     		
     		//Por click carga cerca de 50 mensajes.
 			}catch (Exception e) {
-				//Hay veces que no encuentra el link.... salvo que sea porque desaparece el link más adelante
-				File scrFile = ((TakesScreenshot)this.getDriver()).getScreenshotAs(OutputType.FILE);
-
-				try {
-				FileUtils.copyFile(scrFile, new File("c:\\tmp\\screenshot1.png"));
-				} catch (IOException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				}
+				
 			}
 			
 		}
 		System.out.println("Click en showMore messgaes button: " + i + " veces");
 	}
+	
+	
+	public Comment extractCommentData(WebElement comentario) {
+		Comment auxComment = new Comment();
+		auxComment.setMensaje(comentario.findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
+		//System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
+		return auxComment;
+		//Me falta cortar el id, y pasarlo a long.
+		//System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)).getAttribute("data-hovercard"));
+	}
+	
 	
 	/**
 	 * VERSION PRO.
@@ -265,6 +228,7 @@ public @Data class FacebookScrap extends Scrap{
 		if(this.existElement(container, xPathExpression)) {
 			showMoreLink = container.findElement(By.xpath(xPathExpression));
 			this.moveTo(showMoreLink);
+			this.waitForJStoLoad();
 			try {
     			showMoreLink.click();
     		}catch (Exception e){
@@ -272,6 +236,26 @@ public @Data class FacebookScrap extends Scrap{
     		}
 		}	
 	}
+	
+	
+	public boolean waitForJStoLoad() {
+		ExpectedCondition<Boolean> jsLoad = new ExpectedCondition<Boolean>() {
+		      @Override
+		      public Boolean apply(WebDriver driver) {
+		    	  if(((JavascriptExecutor)driver).executeScript("return document.readyState").toString().equals("complete")) {
+		    		  return true;
+		    	  }else {
+		    		  return false;
+		    	  }
+		    	  
+		      }
+		    };
+
+		    return this.getWaitDriver().until(jsLoad);
+	}
+	
+	
+	
 	
 	
 	public void moveTo(WebElement element) {
