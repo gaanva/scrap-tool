@@ -5,8 +5,11 @@ public final class FacebookConfig {
 	public static String URL = "https://www.facebook.com/";
 	public static String URL_PROFILE =  "https://www.facebook.com/mauriciomacri";
 	////title[@lang='en']
-	public static Integer CANT_PUBLICATIONS_TO_BE_LOAD = 10; //TODO Se puede hacer lo mismo con time stamp.
+	public static Integer CANT_PUBLICATIONS_TO_BE_LOAD = 10;
     
+	public static String uTIME_INI="1520985600"; //03/14/2018 @ 12:00am (UTC) - Desde las 0hs del 14/03
+	public static String uTIME_FIN="1521072000"; //03/15/2018 @ 12:00am (UTC) - Hasta las 0hs dle 15/03
+	
     /**FORM_LOGIN**/
 	public static String XPATH_FORM_LOGIN = "//form[contains(@id,'login_form')]";
     public static String XPATH_INPUT_MAIL_LOGIN = ".//input[contains(@id,'email')]"; 
@@ -38,8 +41,12 @@ public final class FacebookConfig {
     //TIEMSTAMP: HUSO HORARIO GMT (sumarle 4 horas para saber fecha de post en Arg.)
     public static String XPATH_PUBLICATION_TIMESTAMP = ".//abbr[contains(@class,'livetimestamp')]"; //getAttribute("data-utime")
     
+    
     //Condición por timeStamp
-    public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION = ".//abbr[@data-utime]";
+    public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION = ".//abbr[@data-utime>"+FacebookConfig.uTIME_INI+" AND "+"@data-utime<"+FacebookConfig.uTIME_FIN+"]";
+    //Esto me sirve para saber cuando debo seguir cargando más publicaciones.
+    public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED = ".//abbr[@data-utime<"+FacebookConfig.uTIME_INI+"]";
+    
     
     //DATE_TIME: PONE HUSO HORARIO ARGENTINA (GMT+4). Diff de 4hs.
     public static String XPATH_PUBLICATION_DATE_TIME = ".//abbr[contains(@class,'livetimestamp')]"; //getAttribute("title")

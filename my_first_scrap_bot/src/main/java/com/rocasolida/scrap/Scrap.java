@@ -19,12 +19,12 @@ public @Data class Scrap {
 	 * An IMPLICIT wait is to tell WebDriver to poll the DOM for a certain amount of time 
 	 * when trying to find an element or elements if they are not immediately available.
 	 */
-	private static Integer IMPLICIT_WAIT = 5; 
+	private static Integer IMPLICIT_WAIT = 60; 
 	/**
 	 * An EXPLICIT wait is code you define to wait for a certain condition to occur 
 	 * before proceeding further in the code.
 	 */
-	private static Integer EXPLICIT_WAIT = 20; 
+	private static Integer EXPLICIT_WAIT = 60; 
 	
 	private WebDriver driver;
 	private Credential access;
@@ -36,8 +36,11 @@ public @Data class Scrap {
 		DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
 		capabilities.setCapability("phantomjs.binary.path","C:\\Users\\gvaldez\\drivers\\phantomjs.exe");
 		capabilities.setCapability("phantomjs.page.settings.userAgent","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36");
+		capabilities.setCapability("phantomjs.page.settings.loadImages", "false");
+		
 		//Creo el webdriver
 		this.driver = new PhantomJSDriver(capabilities);
+		
 		this.driver.manage().timeouts().implicitlyWait(IMPLICIT_WAIT, TimeUnit.SECONDS);
 		this.waitDriver = new WebDriverWait(this.driver, EXPLICIT_WAIT);
 		
