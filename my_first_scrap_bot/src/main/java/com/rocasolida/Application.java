@@ -34,6 +34,9 @@ public class Application {
 			
 			//fs.obtainPublicationsAndComments();
 			fs.obtainPublicationsLoggedIn();
+			
+			
+			
 		}
 		//SIEMPRE cerrar el navegador. Sino te queda un proceso corriendo for ever "phantomjs.exe".
 		fs.quit();

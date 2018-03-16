@@ -6,6 +6,7 @@ import java.util.List;
 import lombok.Data;
 
 public @Data class Publication {
+	private Long Id;
 	private String owner;
 	private Long timeStamp;
 	private Date dateTime;

@@ -4,6 +4,7 @@ package com.rocasolida;
 public final class FacebookConfig {
 	public static String URL = "https://www.facebook.com/";
 	public static String URL_PROFILE =  "https://www.facebook.com/mauriciomacri";
+	public static String URL_POST = URL_PROFILE+"/posts/";
 	////title[@lang='en']
 	public static Integer CANT_PUBLICATIONS_TO_BE_LOAD = 10;
     
@@ -37,13 +38,17 @@ public final class FacebookConfig {
     
     
     public static String XPATH_PUBLICATIONS_CONTAINER = "//div[contains(@class,'userContentWrapper')]";
+    
+    public static String XPATH_PUBLICATION_ID = ".//a[contains(@ajaxify,'ft_id')]";//getAttribute("ajaxify")
+    public static String XPATH_PUBLICATION_ID_1 = ".//span[contains(@class,'fsm fwn fcg')]//a";
+    
     public static String XPATH_PUBLICATION_OWNER = ".//span[contains(@class,'fwn fcg')]//span[contains(@class,'fwb')]"; //getAttribute("aria-label")
     //TIEMSTAMP: HUSO HORARIO GMT (sumarle 4 horas para saber fecha de post en Arg.)
     public static String XPATH_PUBLICATION_TIMESTAMP = ".//abbr[contains(@class,'livetimestamp')]"; //getAttribute("data-utime")
     
     
     //Condición por timeStamp
-    public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION = ".//abbr[@data-utime>"+FacebookConfig.uTIME_INI+" AND "+"@data-utime<"+FacebookConfig.uTIME_FIN+"]";
+    public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION = ".//abbr[@data-utime>'"+FacebookConfig.uTIME_INI+"' and "+"@data-utime<'"+FacebookConfig.uTIME_FIN+"']";
     //Esto me sirve para saber cuando debo seguir cargando más publicaciones.
     public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED = ".//abbr[@data-utime<"+FacebookConfig.uTIME_INI+"]";
     

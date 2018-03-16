@@ -57,25 +57,36 @@ public @Data class FacebookScrap extends Scrap{
 	}
 	
 	
-	public void obtainPublicationsLoggedIn() {
+	
+	
+	public List<Publication> obtainPublicationsLoggedIn() {
 		List<WebElement> publicationsElements = this.inicializePublicationsLoad(/*utimeIni, utimeFin*/);
-		
+		System.out.println("[INFO] pub elements: " + publicationsElements.size());
 		List<Publication> publicationsImpl= new ArrayList<Publication>();
 		for (int i = 0; i < publicationsElements.size(); i++) {
         	System.out.println("[INFO] SCRAPPING: PUBLICATION NRO: "+ i);
         	Publication aux = new Publication();
-        	//Posiciona el cursor en la publicación para que esté visible.
-    		this.moveTo(publicationsElements.get(i));
-        	//Extraigo los atributos de la publicación en mi instancia.
-    		aux = this.extractPublicationData(publicationsElements.get(i));
+        	this.moveTo(publicationsElements.get(i)); //Posiciono el cursor para hacer visible el elemento.
+        	
+        	aux = this.extractPublicationData(publicationsElements.get(i));
+        	this.getDriver().navigate().to(FacebookConfig.URL_POST+aux.getId());
+        	
+        	//Saco la primer publicacion
+        	WebElement pubNew = this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER+"[1]"));
+        	
     		System.out.println("[INFO] PUBLICATION TITLE: "+aux.getTitulo());
-    		if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
+    		//if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
+    		if(this.existElement(pubNew, FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
 				aux.setComments(this.obtainAllPublicationComments(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER)), FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS));
 			}
-    		
     		publicationsImpl.add(aux);
-    		
-    		
+		}	
+		
+		return publicationsImpl;
+	}
+	
+	
+	
     		
     /*		
     		//Si la publicación tiene comentarios...
@@ -109,7 +120,7 @@ public @Data class FacebookScrap extends Scrap{
 			
 			
 			
-		}
+		
 /*    		
     		- paso 0) hacer click en Ver más mensajes. (VER MAS MSJ LiNK)
 			- Buscar contenedor de los comentarios y replies: div[@class='_3b-9 _j6a']
@@ -124,8 +135,8 @@ public @Data class FacebookScrap extends Scrap{
     		PAra ambos es el mismo tratamiento luego!
 
 */  		
-		this.printPublications(publicationsImpl);
-	}
+		//this.printPublications(publicationsImpl);
+	//}
 	
 	
 	
@@ -201,10 +212,23 @@ public @Data class FacebookScrap extends Scrap{
 					break;
 				}
 			}
-			if((this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED)).size()>0)) {
-				return this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED));
+			if((this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION)).size()>0)) {
+				List<WebElement> allPub = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+				List<WebElement> filteredPub = new ArrayList<WebElement>();
+				WebElement aux; 
+				//Acá filtrarlos por timestamp.
+				for(int i=0; i<allPub.size(); i++) {
+					aux = allPub.get(i);
+					if(aux.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION)).size()>0) {
+						filteredPub.add(allPub.get(i));
+					}
+				}
+				//Solo las publicaciones que matchean con el timestamp.
+				System.out.println("[INFO] Cantidad de publicaciones segun filtro utime: " + filteredPub.size());
+				return filteredPub;
+				
 			}else {
-				System.out.println("[ERROR] No se obtivieron la lista de publicaciones WEB.");
+				System.out.println("[ERROR] No se obtuvieron la lista de publicaciones WEB.");
 				return null;
 			}
 	}
@@ -267,64 +291,85 @@ public @Data class FacebookScrap extends Scrap{
 	
 	public Publication extractPublicationData(WebElement publication){
 		Publication aux = new Publication();
-		/**
-    	 * TIMESTAMP
-    	 * El timestamp viene en GMT.
-    	 */
-    	aux.setTimeStamp(Long.parseLong(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
-    	
-    	/**
-    	 * TITULO
-    	 * TODO HAY QUE VER QUE PASA CUANDO EL TEXTO DEL TITULO ES MUY LARGO... SI RECARGA LA PAGINA O LA MANTIENE EN LA MISMA.
-    	 */
-    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_TITLE)) {
-    		//puede ser que una publicación no tenga título y puede ser que tenga un link de "ver más", al cual hacerle click.
-    		this.clickViewMoreTextContent(publication, FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS);
-    		aux.setTitulo(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
-    	}else {
-    		aux.setTitulo(null);
-    	}
-    	
-    	/**
-    	 * OWNER
-    	 * La pubicación siempre tiene un OWNER.
-    	 */
-    	aux.setOwner(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
-    	/**
-    	 * DATETIME
-    	 * Tener en cuenta que es GMT+4, porque es el del usuario. (controlar cuando la cuenta a scrapear sea de otro país, qué muestra?
-    	 * la del usuario que consulta o la del owner de la cuenta?.)
-    	 * TODO Si son posts, anteriores al día de la fecha, el formato del String cambia a: martes, 6 de marzo de 2018 a las 6:59
-    	 */
-    	String d = (publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP))).getAttribute("title");
-		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-        try
-        {        	
-            Date date = simpleDateFormat.parse(d);
-            aux.setDateTime(date);
-        }
-        catch (ParseException ex)
-        {
-            System.out.println("Exception "+ex);
-        }	
-    	
-        /**
-         * CANTIDAD DE REPRODUCCIONES
-         */
-    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
-    		aux.setCantReproducciones(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
-    	}else {
-    		aux.setCantReproducciones(null);
-    	}
-    	/**
-         * CANTIDAD DE SHARES
-         */
-    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
-    		aux.setCantShare(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
-    	}else {
-    		aux.setCantShare(0);
-    	}
-    	
+		System.out.println("PUBLICACION: ");
+		System.out.println(publication.getText());
+		//this.saveScreenShot("screenshot");
+		
+		//Si la publicación cumple los límites del timestamp...
+		if(publication.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION)).size()>0) {
+			
+			/**
+			 * Extraigo ID del post
+			 */
+			String anchor = publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_ID_1)).getAttribute("href");
+			//ajaxify="/ajax/conversation/nub_story/toggle_pin/?ft_id=10156385746433478&amp;pin=1&amp;with_render=1&amp;notif_setting=enable"
+			/*
+			String corteIni = "ft_id=";
+			int ini = anchor.indexOf(corteIni);//desde esta posición + 6
+			int fin = anchor.indexOf("&amp;");
+			aux.setId(Long.parseLong(anchor.substring((ini+corteIni.length()),fin)));
+			*/
+			//System.out.println("POST ID: " + anchor.substring((ini+corteIni.length()),fin));
+			System.out.println("POST ID: " + anchor);
+			//aux.setId(Id);
+			/**
+	    	 * TIMESTAMP
+	    	 * El timestamp viene en GMT.
+	    	 */
+	    	aux.setTimeStamp(Long.parseLong(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
+	    	
+	    	/**
+	    	 * TITULO
+	    	 * TODO HAY QUE VER QUE PASA CUANDO EL TEXTO DEL TITULO ES MUY LARGO... SI RECARGA LA PAGINA O LA MANTIENE EN LA MISMA.
+	    	 */
+	    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_TITLE)) {
+	    		//puede ser que una publicación no tenga título y puede ser que tenga un link de "ver más", al cual hacerle click.
+	    		this.clickViewMoreTextContent(publication, FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS);
+	    		aux.setTitulo(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
+	    	}else {
+	    		aux.setTitulo(null);
+	    	}
+	    	
+	    	/**
+	    	 * OWNER
+	    	 * La pubicación siempre tiene un OWNER.
+	    	 */
+	    	aux.setOwner(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
+	    	/**
+	    	 * DATETIME
+	    	 * Tener en cuenta que es GMT+4, porque es el del usuario. (controlar cuando la cuenta a scrapear sea de otro país, qué muestra?
+	    	 * la del usuario que consulta o la del owner de la cuenta?.)
+	    	 * TODO Si son posts, anteriores al día de la fecha, el formato del String cambia a: martes, 6 de marzo de 2018 a las 6:59
+	    	 */
+	    	String d = (publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP))).getAttribute("title");
+			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+	        try
+	        {        	
+	            Date date = simpleDateFormat.parse(d);
+	            aux.setDateTime(date);
+	        }
+	        catch (ParseException ex)
+	        {
+	            System.out.println("Exception "+ex);
+	        }	
+	    	
+	        /**
+	         * CANTIDAD DE REPRODUCCIONES
+	         */
+	    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
+	    		aux.setCantReproducciones(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
+	    	}else {
+	    		aux.setCantReproducciones(null);
+	    	}
+	    	/**
+	         * CANTIDAD DE SHARES
+	         */
+	    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
+	    		aux.setCantShare(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
+	    	}else {
+	    		aux.setCantShare(0);
+	    	}
+		}
     	return aux;
 	}
 	
