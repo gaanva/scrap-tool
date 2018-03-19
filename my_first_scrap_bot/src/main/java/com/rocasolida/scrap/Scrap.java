@@ -25,15 +25,17 @@ public @Data class Scrap {
 	 * An IMPLICIT wait is to tell WebDriver to poll the DOM for a certain amount of time 
 	 * when trying to find an element or elements if they are not immediately available.
 	 */
-	private static Integer IMPLICIT_WAIT = 20; 
+	private static Integer IMPLICIT_WAIT = 10; 
 	/**
 	 * An EXPLICIT wait is code you define to wait for a certain condition to occur 
 	 * before proceeding further in the code.
 	 */
-	private static Integer EXPLICIT_WAIT = 20; 
+	private static Integer EXPLICIT_WAIT = 5; 
 	
 	private static String PATH_GHOST_DRIVER = "C:\\Users\\gvaldez\\drivers\\phantomjs.exe";
-	private static String SETTINGS_USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36";
+	//private static String SETTINGS_USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36";
+	private static String SETTINGS_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/52.0.2743.116 Safari/537.36";
+	
 	private static String SETTINGS_LOAD_IMAGE = "false";
 	private static String NAVIGATION_DATA_PATH = "C:\\tmp\\"; //Guarda datos de la navegación. Session, Cookies, etc.
 	private static String NAVIGATION_DATA_STORAGE_QUOTA = "20000";
@@ -47,41 +49,8 @@ public @Data class Scrap {
 	private Actions actions;
 	
 	public Scrap() {
-		
-		/*
-		 	//DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
-			//Phantom options can only be set from CLI
-			List<String> cliArgs = new ArrayList<String>();
-			cliArgs.add("--local-storage-quota=5000");
-			Path local_storage_path = Files.createTempDirectory("PhantomLocalStorage-");
-			cliArgs.add("--local-storage-path=" + local_storage_path.toString());
-			capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs);
-			WebDriver driver = new PhantomJSDriver(capabilities);
-		 */
-		/*
-		DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
-		
-		List<String> cliArgs = new ArrayList<String>();
-		cliArgs.add("--local-storage-quota=5000");
-		cliArgs.add("--local-storage-path=" + "C:\\tmp\\");
-		capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs);
-		
-		
-		capabilities.setCapability("phantomjs.binary.path","C:\\Users\\gvaldez\\drivers\\phantomjs.exe");
-		capabilities.setCapability("phantomjs.page.settings.userAgent","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36");
-		capabilities.setCapability("phantomjs.page.settings.loadImages", "false");
-		*/
 		//Creo el webdriver
 		this.initGhostDriver();
-		
-		/*
-		this.driver.manage().timeouts().implicitlyWait(IMPLICIT_WAIT, TimeUnit.SECONDS);
-		this.waitDriver = new WebDriverWait(this.driver, EXPLICIT_WAIT);
-		
-		this.setScreenDimension();
-		this.driver.manage().window().maximize();
-		this.actions = new Actions(this.driver);
-		*/
 	}
 	
 	public void initGhostDriver() {
@@ -110,6 +79,10 @@ public @Data class Scrap {
 		List<String> cliArgs = new ArrayList<String>();
 		cliArgs.add("--local-storage-quota="+ NAVIGATION_DATA_STORAGE_QUOTA);
 		cliArgs.add("--local-storage-path=" + NAVIGATION_DATA_PATH);
+		cliArgs.add("--web-security=false");
+        cliArgs.add("--ssl-protocol=any");
+        cliArgs.add("--ignore-ssl-errors=true");
+        cliArgs.add("--webdriver-loglevel=ERROR");
 		capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs);
 		capabilities.setCapability("phantomjs.binary.path",PATH_GHOST_DRIVER);
 		capabilities.setCapability("phantomjs.page.settings.userAgent", SETTINGS_USER_AGENT);

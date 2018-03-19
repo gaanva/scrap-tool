@@ -7,11 +7,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
-import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
@@ -19,7 +19,8 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedCondition;
-import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.FluentWait;
+import org.openqa.selenium.support.ui.Wait;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Comment;
@@ -66,14 +67,14 @@ public @Data class FacebookScrap extends Scrap{
 		for (int i = 0; i < publicationsElements.size(); i++) {
 			//Si la publicación cumple los límites del timestamp...
 			//if(publicationsElements.get(i).findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION)).size()>0) {
-				this.moveTo(publicationsElements.get(i)); //Posiciono el cursor para hacer visible el elemento.
+				//this.moveTo(publicationsElements.get(i)); //Posiciono el cursor para hacer visible el elemento.
 	        	System.out.println("[INFO] EXTRAYENDO DATOS DE LA PUBLICACION NRO#"+i);
 	        	//Extraigo los datos de las publicaciones.
 	        	publicationsImpl.add(this.extractPublicationData(publicationsElements.get(i)));
 		}   	
 	        	
-		//for (int i = 0; i < publicationsImpl.size(); i++) {
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < publicationsImpl.size(); i++) {
+		//for (int i = 0; i < 1; i++) {
 			System.out.println("[INFO] RELOAD PHANTOMJS. REININICIALIZAR CONEXIÓN...");
 			this.refresh();
 			System.out.println("[INFO] {fin} RELOAD PHANTOMJS.");
@@ -105,111 +106,73 @@ public @Data class FacebookScrap extends Scrap{
 	 * Me servirá para las replies y para los comentarios.
 	 */
 	public List<Comment> obtainAllPublicationComments(WebElement container, String xPathExpression) {
-		WebElement showMoreLink;
-		//Variable para cargar los comentarios de la página
 		List<WebElement> comentarios= new ArrayList<WebElement>();
-		//Variable para guardar lista de comentarios instanciados.
 		List<Comment> comments = new ArrayList<Comment>();
 		
 		int cantIniComentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size();
 		System.out.println("[INFO] CANTIDAD DE COMENTARIOS INICIAL = " + cantIniComentarios);
-		
-		showMoreLink = container.findElement(By.xpath(xPathExpression));
+		WebElement showMoreLink = container.findElement(By.xpath(xPathExpression));
 		this.moveTo(showMoreLink);
+		
 		showMoreLink.click();
+		int cantReintentos = 0;
 		
-		int veces = 0;
-		int vecesNo =0;
-		while(this.existElement(container, xPathExpression)) {
-			try {
-				System.out.println("[INFO] ENCONTRÓ EL LINK DE MAS MENSAJES...");
-				//this.clickViewMoreTextContent(container, xPathExpression);
-				showMoreLink = container.findElement(By.xpath(xPathExpression));
-				this.moveTo(showMoreLink);
-				//this.getWaitDriver().until(ExpectedConditions.invisibility_of_element_located((By.CSS_SELECTOR, '.archive_loading_bar')))
-				try {
-						
-					//Si la cantidad de comentarios en la página es mayor a la última registrada...
-					if(container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()>cantIniComentarios) {
-						//Entonces, se actualizó la llamada.
-						System.out.println("[INFO] NUEVA CANT COMENTARIOS: " + container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size());
-						cantIniComentarios=container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size();
-						showMoreLink = container.findElement(By.xpath(xPathExpression));
-						this.moveTo(showMoreLink);
-						//
-						vecesNo=0;
-						showMoreLink.click();
-					}else {
-						
-						if(veces<30) {
-							veces++;
-							//this.getWaitDriver().until(ExpectedConditions.invisibilityOfElementLocated((By.xpath("//span[@role='progressbar']"))));
-						}else {
-							veces=0;
-							vecesNo++;
-							System.out.println("No se recibe respuesta... se vuelve a clickear");
-							//this.saveScreenShot("SINRESPUESTA_SHOWMORE"+String.valueOf(System.currentTimeMillis()));
-							showMoreLink = container.findElement(By.xpath(xPathExpression));
-							this.moveTo(showMoreLink);
-							showMoreLink.click();
-						}
-					}
-					
-					if(cantIniComentarios>1990) {
-						System.out.println("[INFO] SE SUPERÓ EL MAX DE COMENTARIOS A PROCESAR.");
-						//this.saveScreenShot("APUNTO_CRASHEAR_"+String.valueOf(System.currentTimeMillis()));
-						break;
-					}
-					if(vecesNo>2){
-						break;
-					}
-	    		}catch (Exception e){
-	    			System.out.println("[WARN] FIN: No se pudo hacer click en 'Ver Más'. ");
-	    			break;
-	    		}
-    		    
-			}catch (Exception e) {
-				System.out.println("[ERROR] No se encontró el LINK Ver más.");
-				break;
-			}
-			
+		
+		while(cantReintentos<2) {
+			showMoreLink = container.findElement(By.xpath(xPathExpression));
+			this.moveTo(showMoreLink);
+			showMoreLink.click();
+			if(this.ctrlClickHasEffect(container, cantIniComentarios)) {
+				cantReintentos=0;
+				cantIniComentarios = (container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size());
+			}else {
+				cantReintentos++;
+			} 
 		}
-		/*
-		List<WebElement> commentsAndReplies = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS_AND_REPLIES_DIVS));
-		for(int k=0; k<commentsAndReplies.size();k++) {
-			try {
-				commentsAndReplies.get(k).getAttribute("id");
-				Comment c = this.extractCommentData(commentsAndReplies.get(k));
-				comments.add(c);
-			}catch(Exception e){
-				System.out.println("[INFO] ES UNA RESPUESTA.");
-				//Busco el último comentario...
-				this.extractCommentData(commentsAndReplies.get(k));
-				commentsAndReplies.get(k).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_VER_RESPUESTAS)).click();
-				
-				comments.get(comments.size()-1);
-				
-				
-				continue;
-			}
-			if() {
-				
-			}
-		}
-		*/
 		
-		
-		
+		System.out.println("[INFO] se cargaron todos los mensajes.");
 		//this.saveScreenShot("SCREEN_SCRAWLED_"+String.valueOf(System.currentTimeMillis()));
 		
 		//comentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS_BLOCK));
 		comentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENT_ROOT_DIV));
+		System.out.println("[INFO] cantidad total comentarios: "+comentarios.size());
 		for(int j=0; j<comentarios.size(); j++) {
 			comments.add(this.extractCommentData(comentarios.get(j)));
     	}
-		
-		System.out.println("[INFO] CANTIDAD TOTAL DE COMENTARIOS: " + comments.size());
+		System.out.println("[INFO] CANTIDAD TOTAL DE COMENTARIOS PROCESADOS: " + comments.size());
 		return comments;
+	}
+	
+	
+	public boolean ctrlClickHasEffect(WebElement container, int cantIniComentarios) {
+		if(!(container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()>cantIniComentarios)) {
+			try {
+				//System.out.println("[INFO]Esperando carga de comentarios..."+System.currentTimeMillis());
+				Thread.sleep(5000);
+				//System.out.println("[INFO]FIN espera"+System.currentTimeMillis());
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		
+		if(!(container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()>cantIniComentarios)) {
+			System.out.println("[INFO] El Click no descargó nuevos comentarios");
+			return false;
+		}else {
+			System.out.println("[INFO] El click trajo nuevos comments: +"+ ((container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size())-cantIniComentarios));
+			try {
+				//System.out.println("[INFO]Esperando carga de comentarios..."+System.currentTimeMillis());
+				Thread.sleep(5000);
+				System.out.println("[INFO] TOTAL comments: +"+ (container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()));
+				//System.out.println("[INFO]FIN espera"+System.currentTimeMillis());
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			
+			return true;
+		}
 	}
 	
 	/**
@@ -285,10 +248,9 @@ public @Data class FacebookScrap extends Scrap{
 		//Utime
 		//System.out.println("USTIME: " + comentario.findElement(By.xpath(FacebookConfig.XPATH_COMMENT_UTIME)).getAttribute("data-utime"));
 		auxComment.setUTime(comentario.findElement(By.xpath(FacebookConfig.XPATH_COMMENT_UTIME)).getAttribute("data-utime"));
+		
+		//System.out.println("[INFO] COmentario procesado:"+auxComment.toString());
 		return auxComment;
-		
-		
-		
 	}
 	
 	
@@ -318,20 +280,40 @@ public @Data class FacebookScrap extends Scrap{
 	
 	
 	public boolean waitForJStoLoad() {
+		System.out.println("[INFO] Waiting for JS Load!");
 		ExpectedCondition<Boolean> jsLoad = new ExpectedCondition<Boolean>() {
 		      @Override
 		      public Boolean apply(WebDriver driver) {
 		    	  if(((JavascriptExecutor)driver).executeScript("return document.readyState").toString().equals("complete")) {
+		    	  	System.out.println("[INFO] DocumentReadyState COMPLETE");
 		    		  return true;
 		    	  }else {
+		    		  System.out.println("[INFO] DocumentReadyState UNCOMPLETE");
 		    		  return false;
 		    	  }
 		    	  
+		    	  //return (Boolean)((JavascriptExecutor)driver).executeScript("return jQuery.active == 0");
 		      }
 		 };
-	
-		 return this.getWaitDriver().until(jsLoad);
+		 
+		 Wait<WebDriver> wait = new FluentWait<WebDriver>(this.getDriver())       
+				 .withTimeout(30, TimeUnit.SECONDS)    
+				 .pollingEvery(5, TimeUnit.SECONDS)    
+				 .ignoring(NoSuchElementException.class); 
+		 
+		 return wait.until(jsLoad);
 	}
+	
+	private static Function<WebDriver,WebElement> elementIdentified(final By locator) {
+	    return new Function<WebDriver, WebElement>() {
+	        @Override
+	        public WebElement apply(WebDriver driver) {
+	            return driver.findElement(locator);
+	        }
+	    };
+	}
+	
+	
 	
 	public void moveTo(WebElement element) {
 		this.getActions().moveToElement(element);
