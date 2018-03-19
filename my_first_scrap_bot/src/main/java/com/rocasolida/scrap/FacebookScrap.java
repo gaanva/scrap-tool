@@ -119,8 +119,10 @@ public @Data class FacebookScrap extends Scrap{
 		showMoreLink.click();
 		
 		int veces = 0;
+		int vecesNo =0;
 		while(this.existElement(container, xPathExpression)) {
 			try {
+				System.out.println("[INFO] ENCONTRÓ EL LINK DE MAS MENSAJES...");
 				//this.clickViewMoreTextContent(container, xPathExpression);
 				showMoreLink = container.findElement(By.xpath(xPathExpression));
 				this.moveTo(showMoreLink);
@@ -135,17 +137,21 @@ public @Data class FacebookScrap extends Scrap{
 						showMoreLink = container.findElement(By.xpath(xPathExpression));
 						this.moveTo(showMoreLink);
 						//
+						vecesNo=0;
 						showMoreLink.click();
 					}else {
+						
 						if(veces<30) {
 							veces++;
-							this.getWaitDriver().until(ExpectedConditions.invisibilityOfElementLocated((By.xpath("//span[@role='progressbar']"))));
+							//this.getWaitDriver().until(ExpectedConditions.invisibilityOfElementLocated((By.xpath("//span[@role='progressbar']"))));
 						}else {
 							veces=0;
+							vecesNo++;
 							System.out.println("No se recibe respuesta... se vuelve a clickear");
 							//this.saveScreenShot("SINRESPUESTA_SHOWMORE"+String.valueOf(System.currentTimeMillis()));
 							showMoreLink = container.findElement(By.xpath(xPathExpression));
 							this.moveTo(showMoreLink);
+							showMoreLink.click();
 						}
 					}
 					
@@ -153,7 +159,10 @@ public @Data class FacebookScrap extends Scrap{
 						System.out.println("[INFO] SE SUPERÓ EL MAX DE COMENTARIOS A PROCESAR.");
 						//this.saveScreenShot("APUNTO_CRASHEAR_"+String.valueOf(System.currentTimeMillis()));
 						break;
-					}					
+					}
+					if(vecesNo>2){
+						break;
+					}
 	    		}catch (Exception e){
 	    			System.out.println("[WARN] FIN: No se pudo hacer click en 'Ver Más'. ");
 	    			break;
