@@ -30,13 +30,9 @@ public class Application {
 		Credential access = new Credential("estelaquilmes2018@gmail.com","qsocialnow2018",0L,"");
 		FacebookScrap fs = new FacebookScrap();
 		System.out.println("[APP]Por hacer login");
-		if(fs.login(access)) {
-			
+		if(fs.login(access)) {			
 			//fs.obtainPublicationsAndComments();
-			fs.obtainPublicationsLoggedIn();
-			
-			
-			
+			fs.printPublications(fs.obtainPublicationsLoggedIn());
 		}
 		//SIEMPRE cerrar el navegador. Sino te queda un proceso corriendo for ever "phantomjs.exe".
 		fs.quit();

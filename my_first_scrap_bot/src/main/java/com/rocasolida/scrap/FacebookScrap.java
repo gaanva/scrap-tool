@@ -7,9 +7,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.openqa.selenium.By;
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.OutputType;
@@ -17,6 +19,7 @@ import org.openqa.selenium.TakesScreenshot;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedCondition;
+import org.openqa.selenium.support.ui.ExpectedConditions;
 
 import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Comment;
@@ -56,90 +59,45 @@ public @Data class FacebookScrap extends Scrap{
 		return false;
 	}
 	
-	
-	
-	
 	public List<Publication> obtainPublicationsLoggedIn() {
-		List<WebElement> publicationsElements = this.inicializePublicationsLoad(/*utimeIni, utimeFin*/);
-		System.out.println("[INFO] pub elements: " + publicationsElements.size());
+		List<WebElement> publicationsElements = this.inicializePublicationsToBeLoad(/*utimeIni, utimeFin*/);
 		List<Publication> publicationsImpl= new ArrayList<Publication>();
+		
 		for (int i = 0; i < publicationsElements.size(); i++) {
-        	System.out.println("[INFO] SCRAPPING: PUBLICATION NRO: "+ i);
-        	Publication aux = new Publication();
-        	this.moveTo(publicationsElements.get(i)); //Posiciono el cursor para hacer visible el elemento.
-        	
-        	aux = this.extractPublicationData(publicationsElements.get(i));
-        	this.getDriver().navigate().to(FacebookConfig.URL_POST+aux.getId());
-        	
-        	//Saco la primer publicacion
-        	WebElement pubNew = this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER+"[1]"));
-        	
-    		System.out.println("[INFO] PUBLICATION TITLE: "+aux.getTitulo());
-    		//if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
-    		if(this.existElement(pubNew, FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
-				aux.setComments(this.obtainAllPublicationComments(publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER)), FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS));
+			//Si la publicación cumple los límites del timestamp...
+			//if(publicationsElements.get(i).findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION)).size()>0) {
+				this.moveTo(publicationsElements.get(i)); //Posiciono el cursor para hacer visible el elemento.
+	        	System.out.println("[INFO] EXTRAYENDO DATOS DE LA PUBLICACION NRO#"+i);
+	        	//Extraigo los datos de las publicaciones.
+	        	publicationsImpl.add(this.extractPublicationData(publicationsElements.get(i)));
+		}   	
+	        	
+		//for (int i = 0; i < publicationsImpl.size(); i++) {
+		for (int i = 0; i < 1; i++) {
+			System.out.println("[INFO] RELOAD PHANTOMJS. REININICIALIZAR CONEXIÓN...");
+			this.refresh();
+			System.out.println("[INFO] {fin} RELOAD PHANTOMJS.");
+			System.out.println("[INFO] ME DIRIJO A: " + FacebookConfig.URL_POST+publicationsImpl.get(i).getId());
+			this.getDriver().navigate().to(FacebookConfig.URL_POST + publicationsImpl.get(i).getId());
+			
+			try {
+				this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_CLOSE_BUTTON)).click();
+			}catch(Exception e){
+				System.out.println("[INFO] NO SE PUDO HACER CLICK EN CERRAR (X).");
 			}
-    		publicationsImpl.add(aux);
-		}	
+			
+        	List<WebElement> pubsNew = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
+        	System.out.println("[INFO] PUBLICATION TITLE: " + publicationsImpl.get(i).getTitulo());
+    		//if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
+        	
+        	System.out.println("[INFO] EXTRAYENDO COMENTARIOS DE LA PUBLICACIÓN");
+    		if(this.existElement(pubsNew.get(0), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
+				publicationsImpl.get(i).setComments(this.obtainAllPublicationComments(pubsNew.get(0).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER)), FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS));
+			}
+	    }	
 		
 		return publicationsImpl;
 	}
-	
-	
-	
-    		
-    /*		
-    		//Si la publicación tiene comentarios...
-			if(this.existElement(publicationsElements.get(i), FacebookConfig.XPATH_COMMENTS_CONTAINER)) {
-				int cantComentariosIni = 0;
-				//Obtengo el elemnto con todos los comentarios...
-				WebElement publicationCommentSection = publicationsElements.get(i).findElement(By.xpath(FacebookConfig.XPATH_COMMENTS_CONTAINER));
-        		//Extraigo los comentarios...
-        		comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
-				int k=0;
-        		do {
-					cantComentariosIni = comentarios.size();
-					for(int j=0; j<comentarios.size(); j++) {
-	        			comments.add(this.extractCommentData(comentarios.get(j)));
-	    	    	}
-	        		
-	        		//Hago click en el "Ver Más" comentarios. Si no existe, capturo el error y sigo con la lógica.
-	        		this.ShowMoreClickPro(publicationCommentSection, FacebookConfig.XPATH_PUBLICATION_VER_MAS_MSJS,k);
-	        		k++;
-	        		//SI HAY MAS COMENTARIOS: Se supone que la cantidad de comentarios totales va a ser mayor que la inicial.
-	        		comentarios = publicationCommentSection.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));//+"[position()>"+cantComentariosIni+"]"));
-	        		System.out.println("[INFO] comentarios inicio: " + cantComentariosIni);
-	        		System.out.println("[INFO] comentarios final (WEB): " + comentarios.size());
-	    		}while(cantComentariosIni < comentarios.size());
-			}else {
-    			aux.setComments(null);
-    			System.out.println("[INFO] Publicación sin comentarios!");
-    		}
-	*/		
-    		
-			
-			
-			
-		
-/*    		
-    		- paso 0) hacer click en Ver más mensajes. (VER MAS MSJ LiNK)
-			- Buscar contenedor de los comentarios y replies: div[@class='_3b-9 _j6a']
-			- Ver mas comentarios?
-
-    		- Recorrer de 1 en 1. child.findElement(By.xpath("//following-sibling::*"));
-    		  SI:
-    		    - Es comment? exist? (.//span[contains(@class,' UFICommentActorAndBody')])
-    		o
-    		    - Es Reply? exist? (.//div[contains(@class,' UFIReplyList')])
-
-    		PAra ambos es el mismo tratamiento luego!
-
-*/  		
-		//this.printPublications(publicationsImpl);
-	//}
-	
-	
-	
 	
 	/**
 	 * Si existe el botón de show more, entonces lo clickea, hasta que se cargaron todos los mensajes
@@ -153,38 +111,95 @@ public @Data class FacebookScrap extends Scrap{
 		//Variable para guardar lista de comentarios instanciados.
 		List<Comment> comments = new ArrayList<Comment>();
 		
+		int cantIniComentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size();
+		System.out.println("[INFO] CANTIDAD DE COMENTARIOS INICIAL = " + cantIniComentarios);
+		
+		showMoreLink = container.findElement(By.xpath(xPathExpression));
+		this.moveTo(showMoreLink);
+		showMoreLink.click();
+		
+		int veces = 0;
 		while(this.existElement(container, xPathExpression)) {
 			try {
-				this.clickViewMoreTextContent(container, xPathExpression);
-				
+				//this.clickViewMoreTextContent(container, xPathExpression);
 				showMoreLink = container.findElement(By.xpath(xPathExpression));
 				this.moveTo(showMoreLink);
+				//this.getWaitDriver().until(ExpectedConditions.invisibility_of_element_located((By.CSS_SELECTOR, '.archive_loading_bar')))
 				try {
-	    			showMoreLink.click();
-	    			if(this.waitForJStoLoad()) {
-	    				System.out.println("[INFO] se hizo click en ver mas!");
-	    			}else {
-	    				System.out.println("[INFO] Se superó el tiempo de espera click en ver más...");
-	    				this.waitForJStoLoad();
-	    			}
+						
+					//Si la cantidad de comentarios en la página es mayor a la última registrada...
+					if(container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()>cantIniComentarios) {
+						//Entonces, se actualizó la llamada.
+						System.out.println("[INFO] NUEVA CANT COMENTARIOS: " + container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size());
+						cantIniComentarios=container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size();
+						showMoreLink = container.findElement(By.xpath(xPathExpression));
+						this.moveTo(showMoreLink);
+						//
+						showMoreLink.click();
+					}else {
+						if(veces<30) {
+							veces++;
+							this.getWaitDriver().until(ExpectedConditions.invisibilityOfElementLocated((By.xpath("//span[@role='progressbar']"))));
+						}else {
+							veces=0;
+							System.out.println("No se recibe respuesta... se vuelve a clickear");
+							//this.saveScreenShot("SINRESPUESTA_SHOWMORE"+String.valueOf(System.currentTimeMillis()));
+							showMoreLink = container.findElement(By.xpath(xPathExpression));
+							this.moveTo(showMoreLink);
+						}
+					}
+					
+					if(cantIniComentarios>1990) {
+						System.out.println("[INFO] SE SUPERÓ EL MAX DE COMENTARIOS A PROCESAR.");
+						//this.saveScreenShot("APUNTO_CRASHEAR_"+String.valueOf(System.currentTimeMillis()));
+						break;
+					}					
 	    		}catch (Exception e){
-	    			System.out.println("[ERROR] No se pudo hacer click. ");
-	    			e.printStackTrace();
-	    			System.out.println("[ERROR] FIN: No se pudo hacer click. ");
+	    			System.out.println("[WARN] FIN: No se pudo hacer click en 'Ver Más'. ");
+	    			break;
 	    		}
     		    
 			}catch (Exception e) {
 				System.out.println("[ERROR] No se encontró el LINK Ver más.");
+				break;
 			}
 			
 		}
+		/*
+		List<WebElement> commentsAndReplies = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS_AND_REPLIES_DIVS));
+		for(int k=0; k<commentsAndReplies.size();k++) {
+			try {
+				commentsAndReplies.get(k).getAttribute("id");
+				Comment c = this.extractCommentData(commentsAndReplies.get(k));
+				comments.add(c);
+			}catch(Exception e){
+				System.out.println("[INFO] ES UNA RESPUESTA.");
+				//Busco el último comentario...
+				this.extractCommentData(commentsAndReplies.get(k));
+				commentsAndReplies.get(k).findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_VER_RESPUESTAS)).click();
+				
+				comments.get(comments.size()-1);
+				
+				
+				continue;
+			}
+			if() {
+				
+			}
+		}
+		*/
 		
-		comentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS));
+		
+		
+		//this.saveScreenShot("SCREEN_SCRAWLED_"+String.valueOf(System.currentTimeMillis()));
+		
+		//comentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS_BLOCK));
+		comentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENT_ROOT_DIV));
 		for(int j=0; j<comentarios.size(); j++) {
 			comments.add(this.extractCommentData(comentarios.get(j)));
     	}
 		
-		System.out.println("[INFO] CAntidad comentarios: " + comments.size());
+		System.out.println("[INFO] CANTIDAD TOTAL DE COMENTARIOS: " + comments.size());
 		return comments;
 	}
 	
@@ -192,11 +207,15 @@ public @Data class FacebookScrap extends Scrap{
 	 * Se cargan todas las publicaciones del timestamp definido en las variables del CONFIG.
 	 * En un futuro llegarían como parámetro.
 	 */
-	public List<WebElement> inicializePublicationsLoad(/*uTimeIni, uTimeFin*/) {
+	public List<WebElement> inicializePublicationsToBeLoad(/*uTimeIni, uTimeFin*/) {
 			this.getDriver().navigate().to(FacebookConfig.URL_PROFILE);
+			System.out.println("[INFO] PROFILE PAGE LOADED. "+ FacebookConfig.URL_PROFILE);
+			
 			//cargo publicaciones hasta que encuentro al menos 1 publicación, que tiene fecha de inicio menor a la uTimeIni.
 			while(!((this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED)).size())>0)){
+			//while(this.continueScroll(pubsLoaded, posIni)){
 			//while(!(this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER)).size()>FacebookConfig.CANT_PUBLICATIONS_TO_BE_LOAD)) {
+				//System.out.println("[INFO] WHILE DE ENCONTRAR PUBLICACIONES CON FECHA ANTERIOR A LA INICIAL INGRESADA");
 				if((this.existElement(null, FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE))) {
 					JavascriptExecutor jse = (JavascriptExecutor)this.getDriver();
 					/**
@@ -206,40 +225,61 @@ public @Data class FacebookScrap extends Scrap{
 					 */
 					jse.executeScript("window.scrollTo(0, document.body.scrollHeight)");
 					this.waitForJStoLoad();
-					System.out.println("[SCROLL] Executed.");
+					System.out.println("[INFO] Scroll down.");
 				}else {
 					System.out.println("[ERROR] Se esperaba encontrar el botón de Show More. Expression: " + FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE);
 					break;
 				}
 			}
-			if((this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION)).size()>0)) {
-				List<WebElement> allPub = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER));
-				List<WebElement> filteredPub = new ArrayList<WebElement>();
-				WebElement aux; 
-				//Acá filtrarlos por timestamp.
-				for(int i=0; i<allPub.size(); i++) {
-					aux = allPub.get(i);
-					if(aux.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION)).size()>0) {
-						filteredPub.add(allPub.get(i));
-					}
-				}
-				//Solo las publicaciones que matchean con el timestamp.
-				System.out.println("[INFO] Cantidad de publicaciones segun filtro utime: " + filteredPub.size());
-				return filteredPub;
-				
+			//Trtatando de usar XPATH:
+			//public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION = ".//abbr[@data-utime>="+FacebookConfig.uTIME_INI+" and @data-utime=<"+FacebookConfig.uTIME_FIN+"]";
+			//public static String XPATH_PUBLICATIONS_CONTAINER = "//div[contains(@class,'userContentWrapper')]";
+			
+			
+			int match = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER+FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION+"//ancestor::div[contains(@class,'userContentWrapper')]")).size();
+			if(match>0){
+				System.out.println("[INFO] SE ENCONTRARON "+ String.valueOf(match) + " PUBLICACIONES ENTRE LAS FECHAS > a "+FacebookConfig.uTIME_INI+" y < a "+FacebookConfig.uTIME_FIN);
+				return this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER+FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION+"//ancestor::div[contains(@class,'userContentWrapper')]"));
 			}else {
-				System.out.println("[ERROR] No se obtuvieron la lista de publicaciones WEB.");
 				return null;
 			}
+			
 	}
 	
+
+	public boolean continueScroll(List<WebElement> pubsLoaded, int posIni) {
+		for(int i = posIni; i<pubsLoaded.size(); i++) {
+			if(pubsLoaded.get(i).findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED)).size()>0) {
+				return false;
+			}
+		}
+		return true;
+	}
+	
+		
 	public Comment extractCommentData(WebElement comentario) {
 		Comment auxComment = new Comment();
-		auxComment.setMensaje(comentario.findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
-		//System.out.println("Comentario "+"nro "+ j +": "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
+		//Mensaje
+		if(comentario.findElements(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).size()>0) {
+			auxComment.setMensaje(comentario.findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
+		}else {
+			//Puede ser porque postea solo una imagen...
+			auxComment.setMensaje("");
+		}
+		//Usuario
+		String ini="id=";
+		String fin="&";
+		String pathUserID = comentario.findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)).getAttribute("data-hovercard");
+		//System.out.println("USERID CORTADO: " + pathUserID.substring(pathUserID.indexOf(ini)+(ini.length()+1),pathUserID.indexOf(fin)));
+		auxComment.setUserId(pathUserID.substring(pathUserID.indexOf(ini)+(ini.length()+1),pathUserID.indexOf(fin)));
+		
+		//Utime
+		//System.out.println("USTIME: " + comentario.findElement(By.xpath(FacebookConfig.XPATH_COMMENT_UTIME)).getAttribute("data-utime"));
+		auxComment.setUTime(comentario.findElement(By.xpath(FacebookConfig.XPATH_COMMENT_UTIME)).getAttribute("data-utime"));
 		return auxComment;
-		//Me falta cortar el id, y pasarlo a long.
-		//System.out.println("USER ID: "+comentarios.get(j).findElement(By.xpath(FacebookConfig.XPATH_USER_ID_COMMENT)).getAttribute("data-hovercard"));
+		
+		
+		
 	}
 	
 	
@@ -291,85 +331,72 @@ public @Data class FacebookScrap extends Scrap{
 	
 	public Publication extractPublicationData(WebElement publication){
 		Publication aux = new Publication();
-		System.out.println("PUBLICACION: ");
-		System.out.println(publication.getText());
-		//this.saveScreenShot("screenshot");
+		/**
+		 * Extraigo ID del post
+		 */
+		String anchor = publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_ID_1)).getAttribute("href");
+		//POST ID: https://www.facebook.com/mauriciomacri/videos/10156385274043478/
+		String[] stringArray = anchor.split("/");
+		//System.out.println("POST ID: " + stringArray[stringArray.length-1]);
+		aux.setId(stringArray[stringArray.length-1]);
+		/**
+    	 * TIMESTAMP
+    	 * El timestamp viene en GMT.
+    	 */
+    	aux.setTimeStamp(Long.parseLong(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
+    	
+    	/**
+    	 * TITULO
+    	 * TODO HAY QUE VER QUE PASA CUANDO EL TEXTO DEL TITULO ES MUY LARGO... SI RECARGA LA PAGINA O LA MANTIENE EN LA MISMA.
+    	 */
+    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_TITLE)) {
+    		//puede ser que una publicación no tenga título y puede ser que tenga un link de "ver más", al cual hacerle click.
+    		this.clickViewMoreTextContent(publication, FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS);
+    		aux.setTitulo(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
+    	}else {
+    		aux.setTitulo(null);
+    	}
+    	
+    	/**
+    	 * OWNER
+    	 * La pubicación siempre tiene un OWNER.
+    	 */
+    	aux.setOwner(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
+    	/**
+    	 * DATETIME
+    	 * Tener en cuenta que es GMT+4, porque es el del usuario. (controlar cuando la cuenta a scrapear sea de otro país, qué muestra?
+    	 * la del usuario que consulta o la del owner de la cuenta?.)
+    	 * TODO Si son posts, anteriores al día de la fecha, el formato del String cambia a: martes, 6 de marzo de 2018 a las 6:59
+    	 */
+    	String d = (publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP))).getAttribute("title");
+		SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
+        try
+        {        	
+            Date date = simpleDateFormat.parse(d);
+            aux.setDateTime(date);
+        }
+        catch (ParseException ex)
+        {
+            System.out.println("Exception "+ex);
+        }	
+    	
+        /**
+         * CANTIDAD DE REPRODUCCIONES
+         */
+    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
+    		aux.setCantReproducciones(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
+    	}else {
+    		aux.setCantReproducciones(null);
+    	}
+    	/**
+         * CANTIDAD DE SHARES
+         */
+    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
+    		aux.setCantShare(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
+    	}else {
+    		aux.setCantShare(0);
+    	}
 		
-		//Si la publicación cumple los límites del timestamp...
-		if(publication.findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION)).size()>0) {
-			
-			/**
-			 * Extraigo ID del post
-			 */
-			String anchor = publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_ID_1)).getAttribute("href");
-			//ajaxify="/ajax/conversation/nub_story/toggle_pin/?ft_id=10156385746433478&amp;pin=1&amp;with_render=1&amp;notif_setting=enable"
-			/*
-			String corteIni = "ft_id=";
-			int ini = anchor.indexOf(corteIni);//desde esta posición + 6
-			int fin = anchor.indexOf("&amp;");
-			aux.setId(Long.parseLong(anchor.substring((ini+corteIni.length()),fin)));
-			*/
-			//System.out.println("POST ID: " + anchor.substring((ini+corteIni.length()),fin));
-			System.out.println("POST ID: " + anchor);
-			//aux.setId(Id);
-			/**
-	    	 * TIMESTAMP
-	    	 * El timestamp viene en GMT.
-	    	 */
-	    	aux.setTimeStamp(Long.parseLong(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP)).getAttribute("data-utime")));
-	    	
-	    	/**
-	    	 * TITULO
-	    	 * TODO HAY QUE VER QUE PASA CUANDO EL TEXTO DEL TITULO ES MUY LARGO... SI RECARGA LA PAGINA O LA MANTIENE EN LA MISMA.
-	    	 */
-	    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_TITLE)) {
-	    		//puede ser que una publicación no tenga título y puede ser que tenga un link de "ver más", al cual hacerle click.
-	    		this.clickViewMoreTextContent(publication, FacebookConfig.XPATH_PUBLICATION_TITLE_VER_MAS);
-	    		aux.setTitulo(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TITLE)).getText());
-	    	}else {
-	    		aux.setTitulo(null);
-	    	}
-	    	
-	    	/**
-	    	 * OWNER
-	    	 * La pubicación siempre tiene un OWNER.
-	    	 */
-	    	aux.setOwner(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_OWNER)).getText());//.getAttribute("aria-label"));
-	    	/**
-	    	 * DATETIME
-	    	 * Tener en cuenta que es GMT+4, porque es el del usuario. (controlar cuando la cuenta a scrapear sea de otro país, qué muestra?
-	    	 * la del usuario que consulta o la del owner de la cuenta?.)
-	    	 * TODO Si son posts, anteriores al día de la fecha, el formato del String cambia a: martes, 6 de marzo de 2018 a las 6:59
-	    	 */
-	    	String d = (publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP))).getAttribute("title");
-			SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm");
-	        try
-	        {        	
-	            Date date = simpleDateFormat.parse(d);
-	            aux.setDateTime(date);
-	        }
-	        catch (ParseException ex)
-	        {
-	            System.out.println("Exception "+ex);
-	        }	
-	    	
-	        /**
-	         * CANTIDAD DE REPRODUCCIONES
-	         */
-	    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)) {
-	    		aux.setCantReproducciones(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_REPRO)).getText().replaceAll("\\D+","")));
-	    	}else {
-	    		aux.setCantReproducciones(null);
-	    	}
-	    	/**
-	         * CANTIDAD DE SHARES
-	         */
-	    	if(this.existElement(publication, FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)) {
-	    		aux.setCantShare(Integer.parseInt(publication.findElement(By.xpath(FacebookConfig.XPATH_PUBLICATION_CANT_SHARE)).getText().replaceAll("\\D+","")));
-	    	}else {
-	    		aux.setCantShare(0);
-	    	}
-		}
     	return aux;
 	}
 	
@@ -561,7 +588,7 @@ public @Data class FacebookScrap extends Scrap{
 				
 	}
 	
-	private void printPublications(List<Publication> lista) {
+	public void printPublications(List<Publication> lista) {
 		System.out.println("SE ENCONTRARON UN TOTAL DE " + lista.size() + "PUBLICACIONES");
 		for (int j = 0; j < lista.size(); j++) {
 			System.out.println("============== POS " + j + "===============");

@@ -5,8 +5,8 @@ import java.util.List;
 import lombok.Data;
 
 public @Data class Comment {
-	private Long userId;
+	private String userId;
 	private String mensaje;
-	private Long uTime;
+	private String uTime;
 	private List<Reply> replies;
 }

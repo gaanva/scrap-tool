@@ -1,15 +1,21 @@
 package com.rocasolida.scrap;
 
+
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.openqa.selenium.Cookie;
 import org.openqa.selenium.Dimension;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
+import org.openqa.selenium.phantomjs.PhantomJSDriverService;
 import org.openqa.selenium.remote.DesiredCapabilities;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import com.rocasolida.FacebookConfig;
 import com.rocasolida.entities.Credential;
 
 import lombok.Data;
@@ -19,48 +25,105 @@ public @Data class Scrap {
 	 * An IMPLICIT wait is to tell WebDriver to poll the DOM for a certain amount of time 
 	 * when trying to find an element or elements if they are not immediately available.
 	 */
-	private static Integer IMPLICIT_WAIT = 60; 
+	private static Integer IMPLICIT_WAIT = 20; 
 	/**
 	 * An EXPLICIT wait is code you define to wait for a certain condition to occur 
 	 * before proceeding further in the code.
 	 */
-	private static Integer EXPLICIT_WAIT = 60; 
+	private static Integer EXPLICIT_WAIT = 20; 
+	
+	private static String PATH_GHOST_DRIVER = "C:\\Users\\gvaldez\\drivers\\phantomjs.exe";
+	private static String SETTINGS_USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36";
+	private static String SETTINGS_LOAD_IMAGE = "false";
+	private static String NAVIGATION_DATA_PATH = "C:\\tmp\\"; //Guarda datos de la navegación. Session, Cookies, etc.
+	private static String NAVIGATION_DATA_STORAGE_QUOTA = "20000";
+	
+	private static Integer SCREEN_WIDTH = 1920;
+	private static Integer SCREEN_HEIGHT = 1080;
 	
 	private WebDriver driver;
 	private Credential access;
 	private WebDriverWait waitDriver;
 	private Actions actions;
+	
 	public Scrap() {
 		
-		
+		/*
+		 	//DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
+			//Phantom options can only be set from CLI
+			List<String> cliArgs = new ArrayList<String>();
+			cliArgs.add("--local-storage-quota=5000");
+			Path local_storage_path = Files.createTempDirectory("PhantomLocalStorage-");
+			cliArgs.add("--local-storage-path=" + local_storage_path.toString());
+			capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs);
+			WebDriver driver = new PhantomJSDriver(capabilities);
+		 */
+		/*
 		DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
+		
+		List<String> cliArgs = new ArrayList<String>();
+		cliArgs.add("--local-storage-quota=5000");
+		cliArgs.add("--local-storage-path=" + "C:\\tmp\\");
+		capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs);
+		
+		
 		capabilities.setCapability("phantomjs.binary.path","C:\\Users\\gvaldez\\drivers\\phantomjs.exe");
 		capabilities.setCapability("phantomjs.page.settings.userAgent","Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.120 Safari/537.36");
 		capabilities.setCapability("phantomjs.page.settings.loadImages", "false");
-		
+		*/
 		//Creo el webdriver
-		this.driver = new PhantomJSDriver(capabilities);
+		this.initGhostDriver();
 		
+		/*
 		this.driver.manage().timeouts().implicitlyWait(IMPLICIT_WAIT, TimeUnit.SECONDS);
 		this.waitDriver = new WebDriverWait(this.driver, EXPLICIT_WAIT);
 		
 		this.setScreenDimension();
 		this.driver.manage().window().maximize();
 		this.actions = new Actions(this.driver);
-		
+		*/
+	}
+	
+	public void initGhostDriver() {
+		this.driver = new PhantomJSDriver(this.getDriverCapabilities());
+		this.configureDriver();
 	}
 	
 	public void quit() {
 		this.driver.quit();
 	}
 	
-	private void setScreenDimension(){
-		/*
-		 * [SCREEN SIZE]Debería ser una property de la aplicación. Si no le pones esto, 
-		 * cuando queres clickear un elemento, te dice que el elemento no está visible y por ende no lo podés manipular.
-		 * Selenium se basa en todo lo que sea Visual en pantalla.
-		 */
-		this.driver.manage().window().setSize(new Dimension(1920, 1080)); 
+	//Libera recursos y me guarda la session.
+	public void refresh() {
+		Set<Cookie> session = this.driver.manage().getCookies();
+		this.driver.close();
+		this.driver.quit();
+		this.initGhostDriver();
+		for(Cookie cookie : session)
+		    this.driver.manage().addCookie(cookie);
+	}
+	
+		
+	
+	private DesiredCapabilities getDriverCapabilities() {
+		DesiredCapabilities capabilities = DesiredCapabilities.phantomjs();
+		List<String> cliArgs = new ArrayList<String>();
+		cliArgs.add("--local-storage-quota="+ NAVIGATION_DATA_STORAGE_QUOTA);
+		cliArgs.add("--local-storage-path=" + NAVIGATION_DATA_PATH);
+		capabilities.setCapability(PhantomJSDriverService.PHANTOMJS_CLI_ARGS, cliArgs);
+		capabilities.setCapability("phantomjs.binary.path",PATH_GHOST_DRIVER);
+		capabilities.setCapability("phantomjs.page.settings.userAgent", SETTINGS_USER_AGENT);
+		capabilities.setCapability("phantomjs.page.settings.loadImages", SETTINGS_LOAD_IMAGE);
+		
+		return capabilities;
+	}
+	
+	private void configureDriver() {
+		this.driver.manage().timeouts().implicitlyWait(IMPLICIT_WAIT, TimeUnit.SECONDS);
+		this.waitDriver = new WebDriverWait(this.driver, EXPLICIT_WAIT);
+		this.driver.manage().window().setSize(new Dimension(SCREEN_WIDTH, SCREEN_HEIGHT)); 
+		this.driver.manage().window().maximize();
+		this.actions = new Actions(this.driver);
 	}
 	
 }
