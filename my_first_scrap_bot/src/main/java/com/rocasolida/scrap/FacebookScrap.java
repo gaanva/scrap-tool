@@ -100,6 +100,56 @@ public @Data class FacebookScrap extends Scrap{
 		return publicationsImpl;
 	}
 	
+	public List<WebElement> inicializePublicationsToBeLoad(/*uTimeIni, uTimeFin*/) {
+		this.getDriver().navigate().to(FacebookConfig.URL_PROFILE);
+		System.out.println("[INFO] PROFILE PAGE LOADED. "+ FacebookConfig.URL_PROFILE);
+		
+		//cargo publicaciones hasta que encuentro al menos 1 publicación, que tiene fecha de inicio menor a la uTimeIni.
+		while(!((this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED)).size())>0)){
+		//while(this.continueScroll(pubsLoaded, posIni)){
+		//while(!(this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER)).size()>FacebookConfig.CANT_PUBLICATIONS_TO_BE_LOAD)) {
+			//System.out.println("[INFO] WHILE DE ENCONTRAR PUBLICACIONES CON FECHA ANTERIOR A LA INICIAL INGRESADA");
+			if((this.existElement(null, FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE))) {
+				JavascriptExecutor jse = (JavascriptExecutor)this.getDriver();
+				/**
+				 * TODO Buscar una manera de que espere a que refresque la página
+				 * luego de hacer el primer scroll. Sino se ejecuta el scroll unas cuantas veces
+				 * hasta que muestra las publicaciones.
+				 */
+				jse.executeScript("window.scrollTo(0, document.body.scrollHeight)");
+				this.waitForJStoLoad();
+				System.out.println("[INFO] Scroll down.");
+			}else {
+				System.out.println("[ERROR] Se esperaba encontrar el botón de Show More. Expression: " + FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE);
+				break;
+			}
+		}
+		
+		int match = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER+FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION+"//ancestor::div[contains(@class,'userContentWrapper')]")).size();
+		if(match>0){
+			System.out.println("[INFO] SE ENCONTRARON "+ String.valueOf(match) + " PUBLICACIONES ENTRE LAS FECHAS > a "+FacebookConfig.uTIME_INI+" y < a "+FacebookConfig.uTIME_FIN);
+			return this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER+FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION+"//ancestor::div[contains(@class,'userContentWrapper')]"));
+		}else {
+			return null;
+		}
+		
+}
+
+/**
+ * 
+ 	* @param pubsLoaded
+ * @param posIni
+ * @return true si al menos 1 publicación es menor a la fecha inicial.
+ */
+	public boolean continueScroll(List<WebElement> pubsLoaded, int posIni) {
+	for(int i = posIni; i<pubsLoaded.size(); i++) {
+		if(pubsLoaded.get(i).findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED)).size()>0) {
+			return false;
+		}
+	}
+	return true;
+}
+
 	/**
 	 * Si existe el botón de show more, entonces lo clickea, hasta que se cargaron todos los mensajes
 	 * para luego obtenerlos con un XPATH query y extraerle los datos.
@@ -142,8 +192,15 @@ public @Data class FacebookScrap extends Scrap{
 		System.out.println("[INFO] CANTIDAD TOTAL DE COMENTARIOS PROCESADOS: " + comments.size());
 		return comments;
 	}
-	
-	
+	/**
+	 * Controla que el link_click al "Ver Más" en Comentarios, devuelva algo.
+	 * @param container: es el container de los Cometnarios de la publicación.
+	 * @param cantIniComentarios: sirve para comparar cantidades de mensajes.
+	 * @return
+	 * 
+	 * TODO: Espero arbitrariamente a la carga de los mensajes... debería encontrar
+	 * la forma de esperar a que el REACTJS y el render del DOM finalicen.
+	 */
 	public boolean ctrlClickHasEffect(WebElement container, int cantIniComentarios) {
 		if(!(container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()>cantIniComentarios)) {
 			try {
@@ -176,59 +233,9 @@ public @Data class FacebookScrap extends Scrap{
 	}
 	
 	/**
-	 * Se cargan todas las publicaciones del timestamp definido en las variables del CONFIG.
-	 * En un futuro llegarían como parámetro.
+	 * Se cargan todas las publicaciones, haciendo scrolls,
+	 * del timestamp definido en las variables del CONFIG.
 	 */
-	public List<WebElement> inicializePublicationsToBeLoad(/*uTimeIni, uTimeFin*/) {
-			this.getDriver().navigate().to(FacebookConfig.URL_PROFILE);
-			System.out.println("[INFO] PROFILE PAGE LOADED. "+ FacebookConfig.URL_PROFILE);
-			
-			//cargo publicaciones hasta que encuentro al menos 1 publicación, que tiene fecha de inicio menor a la uTimeIni.
-			while(!((this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED)).size())>0)){
-			//while(this.continueScroll(pubsLoaded, posIni)){
-			//while(!(this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER)).size()>FacebookConfig.CANT_PUBLICATIONS_TO_BE_LOAD)) {
-				//System.out.println("[INFO] WHILE DE ENCONTRAR PUBLICACIONES CON FECHA ANTERIOR A LA INICIAL INGRESADA");
-				if((this.existElement(null, FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE))) {
-					JavascriptExecutor jse = (JavascriptExecutor)this.getDriver();
-					/**
-					 * TODO Buscar una manera de que espere a que refresque la página
-					 * luego de hacer el primer scroll. Sino se ejecuta el scroll unas cuantas veces
-					 * hasta que muestra las publicaciones.
-					 */
-					jse.executeScript("window.scrollTo(0, document.body.scrollHeight)");
-					this.waitForJStoLoad();
-					System.out.println("[INFO] Scroll down.");
-				}else {
-					System.out.println("[ERROR] Se esperaba encontrar el botón de Show More. Expression: " + FacebookConfig.XPATH_PPAL_BUTTON_SHOW_MORE);
-					break;
-				}
-			}
-			//Trtatando de usar XPATH:
-			//public static String XPATH_PUBLICATION_TIMESTAMP_CONDITION = ".//abbr[@data-utime>="+FacebookConfig.uTIME_INI+" and @data-utime=<"+FacebookConfig.uTIME_FIN+"]";
-			//public static String XPATH_PUBLICATIONS_CONTAINER = "//div[contains(@class,'userContentWrapper')]";
-			
-			
-			int match = this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER+FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION+"//ancestor::div[contains(@class,'userContentWrapper')]")).size();
-			if(match>0){
-				System.out.println("[INFO] SE ENCONTRARON "+ String.valueOf(match) + " PUBLICACIONES ENTRE LAS FECHAS > a "+FacebookConfig.uTIME_INI+" y < a "+FacebookConfig.uTIME_FIN);
-				return this.getDriver().findElements(By.xpath(FacebookConfig.XPATH_PUBLICATIONS_CONTAINER+FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION+"//ancestor::div[contains(@class,'userContentWrapper')]"));
-			}else {
-				return null;
-			}
-			
-	}
-	
-
-	public boolean continueScroll(List<WebElement> pubsLoaded, int posIni) {
-		for(int i = posIni; i<pubsLoaded.size(); i++) {
-			if(pubsLoaded.get(i).findElements(By.xpath(FacebookConfig.XPATH_PUBLICATION_TIMESTAMP_CONDITION_SATISFIED)).size()>0) {
-				return false;
-			}
-		}
-		return true;
-	}
-	
-		
 	public Comment extractCommentData(WebElement comentario) {
 		Comment auxComment = new Comment();
 		//Mensaje
@@ -252,33 +259,7 @@ public @Data class FacebookScrap extends Scrap{
 		//System.out.println("[INFO] COmentario procesado:"+auxComment.toString());
 		return auxComment;
 	}
-	
-	
-	/**
-	 * Click en el link de "Ver Más".
-	 * @param container
-	 * @param xPathExpression
-	 */
-	public void ShowMoreClick(WebElement container, String xPathExpression) {
-		WebElement showMoreLink;
-		if(this.existElement(container, xPathExpression)) {
-			showMoreLink = container.findElement(By.xpath(xPathExpression));
-			this.moveTo(showMoreLink);
-			try {
-    			showMoreLink.click();
-    			if(this.waitForJStoLoad()) {
-    				System.out.println("[INFO] se hizo click en ver mas!");
-    			}else {
-    				System.out.println("[INFO] Se superó el tiempo de espera click en ver más...");
-    				this.waitForJStoLoad();
-    			}
-    		}catch (Exception e){
-    			System.out.println("[ERROR] No se pudo hacer click en mostrar mas.");
-    		}
-		}	
-	}
-	
-	
+		
 	public boolean waitForJStoLoad() {
 		System.out.println("[INFO] Waiting for JS Load!");
 		ExpectedCondition<Boolean> jsLoad = new ExpectedCondition<Boolean>() {
@@ -303,17 +284,6 @@ public @Data class FacebookScrap extends Scrap{
 		 
 		 return wait.until(jsLoad);
 	}
-	
-	private static Function<WebDriver,WebElement> elementIdentified(final By locator) {
-	    return new Function<WebDriver, WebElement>() {
-	        @Override
-	        public WebElement apply(WebDriver driver) {
-	            return driver.findElement(locator);
-	        }
-	    };
-	}
-	
-	
 	
 	public void moveTo(WebElement element) {
 		this.getActions().moveToElement(element);
@@ -391,6 +361,10 @@ public @Data class FacebookScrap extends Scrap{
     	return aux;
 	}
 	
+	
+	/**
+	 * por el momento sin uso.
+	 */
 	public void obtainPublicationsAndCommentsNotLoggedIn() {
 		this.getDriver().navigate().to(FacebookConfig.URL_PROFILE);
 		
@@ -538,9 +512,6 @@ public @Data class FacebookScrap extends Scrap{
        */
 	}
 	
-	/*
-	 * Pasarle el nodo que contiene los comentarios de una publicación. Me debería devolver la clase Comentario.
-	 */
 	private boolean loggedIn() {
 		try {
 			this.getDriver().findElement(By.xpath(FacebookConfig.XPATH_FORM_LOGIN));
