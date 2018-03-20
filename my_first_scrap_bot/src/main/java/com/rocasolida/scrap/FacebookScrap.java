@@ -108,7 +108,7 @@ public @Data class FacebookScrap extends Scrap{
 	public List<Comment> obtainAllPublicationComments(WebElement container, String xPathExpression) {
 		List<WebElement> comentarios= new ArrayList<WebElement>();
 		List<Comment> comments = new ArrayList<Comment>();
-		
+		System.out.println("[TIME] Extract COMMENT INIT:" + System.currentTimeMillis());
 		int cantIniComentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size();
 		System.out.println("[INFO] CANTIDAD DE COMENTARIOS INICIAL = " + cantIniComentarios);
 		WebElement showMoreLink = container.findElement(By.xpath(xPathExpression));
@@ -140,6 +140,9 @@ public @Data class FacebookScrap extends Scrap{
 			comments.add(this.extractCommentData(comentarios.get(j)));
     	}
 		System.out.println("[INFO] CANTIDAD TOTAL DE COMENTARIOS PROCESADOS: " + comments.size());
+		
+		
+		System.out.println("[TIME] Extract COMMENT FIN: " + System.currentTimeMillis());
 		return comments;
 	}
 	
@@ -148,7 +151,7 @@ public @Data class FacebookScrap extends Scrap{
 		if(!(container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()>cantIniComentarios)) {
 			try {
 				//System.out.println("[INFO]Esperando carga de comentarios..."+System.currentTimeMillis());
-				Thread.sleep(5000);
+				Thread.sleep(800);
 				//System.out.println("[INFO]FIN espera"+System.currentTimeMillis());
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -163,7 +166,7 @@ public @Data class FacebookScrap extends Scrap{
 			System.out.println("[INFO] El click trajo nuevos comments: +"+ ((container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size())-cantIniComentarios));
 			try {
 				//System.out.println("[INFO]Esperando carga de comentarios..."+System.currentTimeMillis());
-				Thread.sleep(5000);
+				Thread.sleep(800);
 				System.out.println("[INFO] TOTAL comments: +"+ (container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()));
 				//System.out.println("[INFO]FIN espera"+System.currentTimeMillis());
 			} catch (InterruptedException e) {
@@ -231,6 +234,7 @@ public @Data class FacebookScrap extends Scrap{
 		
 	public Comment extractCommentData(WebElement comentario) {
 		Comment auxComment = new Comment();
+		
 		//Mensaje
 		if(comentario.findElements(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).size()>0) {
 			auxComment.setMensaje(comentario.findElement(By.xpath(FacebookConfig.XPATH_USER_COMMENT)).getText());
@@ -248,6 +252,7 @@ public @Data class FacebookScrap extends Scrap{
 		//Utime
 		//System.out.println("USTIME: " + comentario.findElement(By.xpath(FacebookConfig.XPATH_COMMENT_UTIME)).getAttribute("data-utime"));
 		auxComment.setUTime(comentario.findElement(By.xpath(FacebookConfig.XPATH_COMMENT_UTIME)).getAttribute("data-utime"));
+		
 		
 		//System.out.println("[INFO] COmentario procesado:"+auxComment.toString());
 		return auxComment;
@@ -322,6 +327,7 @@ public @Data class FacebookScrap extends Scrap{
 	
 	public Publication extractPublicationData(WebElement publication){
 		Publication aux = new Publication();
+		System.out.println("[TIME] Extract INIT: " + System.currentTimeMillis());
 		/**
 		 * Extraigo ID del post
 		 */
@@ -330,6 +336,7 @@ public @Data class FacebookScrap extends Scrap{
 		String[] stringArray = anchor.split("/");
 		//System.out.println("POST ID: " + stringArray[stringArray.length-1]);
 		aux.setId(stringArray[stringArray.length-1]);
+		
 		/**
     	 * TIMESTAMP
     	 * El timestamp viene en GMT.
@@ -387,7 +394,7 @@ public @Data class FacebookScrap extends Scrap{
     	}else {
     		aux.setCantShare(0);
     	}
-		
+    	System.out.println("[TIME] Extract FIN: " + System.currentTimeMillis());
     	return aux;
 	}
 	
