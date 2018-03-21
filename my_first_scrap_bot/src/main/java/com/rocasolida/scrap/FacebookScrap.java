@@ -175,6 +175,9 @@ public @Data class FacebookScrap extends Scrap{
 			if(this.ctrlClickHasEffect(container, cantIniComentarios)) {
 				cantReintentos=0;
 				cantIniComentarios = (container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size());
+				if(cantIniComentarios>2200) {
+					break;
+				}
 			}else {
 				cantReintentos++;
 			} 
@@ -185,9 +188,10 @@ public @Data class FacebookScrap extends Scrap{
 		
 		//comentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS_BLOCK));
 		comentarios = container.findElements(By.xpath(FacebookConfig.XPATH_COMMENT_ROOT_DIV));
-		System.out.println("[INFO] cantidad total comentarios: "+comentarios.size());
+		System.out.println("[INFO] PROCESANDO: "+comentarios.size()+" COMENTARIOS.");
 		for(int j=0; j<comentarios.size(); j++) {
 			comments.add(this.extractCommentData(comentarios.get(j)));
+			System.out.print("--COMENTARIO "+j+ "||");
     	}
 		System.out.println("[INFO] CANTIDAD TOTAL DE COMENTARIOS PROCESADOS: " + comments.size());
 		return comments;
@@ -205,7 +209,7 @@ public @Data class FacebookScrap extends Scrap{
 		if(!(container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()>cantIniComentarios)) {
 			try {
 				//System.out.println("[INFO]Esperando carga de comentarios..."+System.currentTimeMillis());
-				Thread.sleep(5000);
+				Thread.sleep(800);
 				//System.out.println("[INFO]FIN espera"+System.currentTimeMillis());
 			} catch (InterruptedException e) {
 				// TODO Auto-generated catch block
@@ -220,7 +224,7 @@ public @Data class FacebookScrap extends Scrap{
 			System.out.println("[INFO] El click trajo nuevos comments: +"+ ((container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size())-cantIniComentarios));
 			try {
 				//System.out.println("[INFO]Esperando carga de comentarios..."+System.currentTimeMillis());
-				Thread.sleep(5000);
+				Thread.sleep(800);
 				System.out.println("[INFO] TOTAL comments: +"+ (container.findElements(By.xpath(FacebookConfig.XPATH_COMMENTS)).size()));
 				//System.out.println("[INFO]FIN espera"+System.currentTimeMillis());
 			} catch (InterruptedException e) {
